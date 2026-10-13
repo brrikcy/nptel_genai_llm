@@ -1,0 +1,86 @@
+COURSE.weeks.push({
+  id: "w8", n: 8, title: "Diffusion models II",
+  tagline: "The U-Net denoiser, classifier and classifier-free guidance, Stable Diffusion.",
+  intro: "This week opens the denoiser itself (a time-conditioned U-Net), adds control (classifier guidance, then classifier-free guidance), and makes it fast enough for practical use by moving diffusion into a compressed latent space (Stable Diffusion). Lectures 49–53.",
+  topics: [
+    {
+      id: "w8t1", title: "The U-Net denoiser", lec: [49], min: 16, w: "unet",
+      hook: "The denoiser's output must have exactly the same height and width as its input, and must reproduce fine detail while understanding the whole image. One architecture originally built for segmenting cells under a microscope fits perfectly. Why that one?",
+      reveal: "<p>The <b>U-Net</b>: an encoder that shrinks the image to capture global context, a decoder that grows it back, and <b>skip connections</b> that hand fine detail straight across. Same input and output size, global and local information at once.</p>",
+      cards: [
+        { h: "Anatomy", b: `<ul><li><b>Encoder (down) blocks</b>: residual convolution blocks, normalisation (GroupNorm), downsampling. Resolution goes down, channels go up.</li><li><b>Bottleneck</b>: lowest resolution, widest; usually includes <b>self-attention</b> so distant regions can coordinate.</li><li><b>Decoder (up) blocks</b>: upsampling plus concatenation with the matching encoder features (<b>skip connections</b>), then residual blocks.</li><li><b>Output</b>: ε̂_θ(x_t, t), the same shape as x_t.</li></ul>`, w: "unet" },
+        { h: "Time embedding: one network for every t", b: `<div class="eq">emb(t)_2i = sin(t / 10000^(2i/d)),   emb(t)_2i+1 = cos(t / 10000^(2i/d))   → MLP → added inside each residual block</div>
+          <p>The noise level differs hugely between t = 10 and t = 900. The <b>sinusoidal time embedding</b> (the same trick as transformer positional encodings) tells every block how much noise to expect, so one set of weights handles all timesteps.</p>`,
+          ask: { q: "Why does the diffusion U-Net need a time embedding?", o: ["To speed up training", "So a single network knows the noise level of x_t and can denoise any step", "To replace skip connections", "To encode the text prompt"], a: 1, x: "Without t the network could not tell how much noise to remove." } },
+        { h: "Hands-on: building it", b: `<ul><li>Noise schedules (linear, cosine) and precomputed ᾱ.</li><li><code>SinusoidalPositionEmbeddings(t)</code> → MLP.</li><li><code>ResidualBlock(in, out, time_emb_dim)</code>: conv → norm → activation (SiLU) → add the time embedding → conv → residual add.</li><li>Down path with stride-2 convs, bottleneck with attention, up path with <code>ConvTranspose2d</code> and torch.cat skips.</li><li>Train with MSE on the noise; sample with the DDPM loop.</li></ul>` }
+      ],
+      keys: ["U-Net = encoder + bottleneck + decoder + skip connections; input and output have the same size.", "Residual blocks with GroupNorm; self-attention at low resolutions.", "Sinusoidal time embedding → MLP → added into each block.", "Output: predicted noise ε̂_θ(x_t, t)."],
+      traps: ["Skip connections concatenate encoder features into the decoder; they are different from the residual additions inside blocks.", "The time embedding is added to features, not concatenated to the image.", "The U-Net predicts noise, not the class."],
+      quiz: [
+        { q: "The main purpose of skip connections in the diffusion U-Net is to:", o: ["Add noise", "Carry high-resolution detail from encoder to decoder", "Encode the timestep", "Reduce the number of channels"], a: 1, x: "Fine spatial detail bypasses the low-resolution bottleneck.", r: 0 },
+        { q: "How is the timestep t usually given to the U-Net?", o: ["As an extra image channel of constant value", "Through a sinusoidal embedding passed through an MLP and added in residual blocks", "It is not given", "As the batch size"], a: 1, x: "Same idea as transformer positional encodings.", r: 1 },
+        { q: "Which components are typically found in a diffusion U-Net? (Select all that apply)", o: ["Residual convolution blocks", "Self-attention at low resolution", "Skip connections", "A discriminator head"], a: [0, 1, 2], x: "There is no discriminator in a diffusion model.", r: 0 },
+        { q: "The output of the denoising U-Net has:", o: ["One value per class", "The same spatial shape as x_t", "Half the resolution of x_t", "Only the time embedding"], a: 1, x: "It predicts the noise tensor ε for every pixel.", r: 0 }
+      ]
+    },
+    {
+      id: "w8t2", title: "Guidance: classifier and classifier-free", lec: [50, 51], min: 18, w: "cfg",
+      hook: "A diffusion model asked for “a corgi” sometimes gives a vaguely dog-shaped blob. What if, at every step, you nudged the sample in the direction that makes it look more like a corgi, and could turn the strength of that nudge up or down?",
+      reveal: "<p>That nudge is <b>guidance</b>. Classifier guidance gets the direction from a separate classifier's gradient. Classifier-free guidance gets it by comparing the model's own conditional and unconditional predictions, and then extrapolating with a guidance scale w.</p>",
+      cards: [
+        { h: "Conditional diffusion", b: `<p>Give the denoiser the condition: ε_θ(x_t, t, y), where y is a class label or a text embedding. That alone works, but samples often follow the condition only loosely. Guidance strengthens it.</p>` },
+        { h: "Classifier guidance", b: `<div class="eq">∇_{x_t} log p(x_t | y) = ∇_{x_t} log p(x_t) + ∇_{x_t} log p(y | x_t)</div>
+          <div class="eq">ε̂ = ε_θ(x_t, t) − s · √(1 − ᾱ_t) · ∇_{x_t} log p_φ(y | x_t)</div>
+          <ul><li>A separate <b>classifier p_φ(y | x_t)</b> trained on <i>noisy</i> images at all timesteps supplies the gradient.</li><li>s = guidance scale: larger s gives more class-faithful, less diverse samples.</li><li>Drawbacks: you must train an extra noise-robust classifier, and its gradients can be adversarial or noisy.</li></ul>` },
+        { h: "Classifier-free guidance (CFG)", b: `<div class="eq">ε̃ = ε_θ(x_t, t, ∅) + w · ( ε_θ(x_t, t, y) − ε_θ(x_t, t, ∅) )</div>
+          <ul><li>Train <b>one</b> network for both: during training, replace y with a null token ∅ about 10–20% of the time (condition dropout).</li><li>At sampling time, run it twice per step (with and without the condition) and extrapolate.</li><li>w = 0: unconditional. w = 1: plain conditional. w > 1: stronger adherence, less diversity (Stable Diffusion's default ≈ 7.5). Very large w: oversaturated artifacts.</li><li>No extra classifier; it is the method used in Stable Diffusion, DALL·E 2 and Imagen.</li></ul>`, w: "cfg",
+          ask: { q: "Classifier-free guidance needs how many forward passes of the denoiser per sampling step?", o: ["1", "2", "T", "0"], a: 1, x: "One conditional and one unconditional prediction, combined with weight w." } }
+      ],
+      keys: ["Classifier guidance: add s·∇log p_φ(y|x_t) from a separate noisy-image classifier.", "CFG: ε̃ = ε_uncond + w(ε_cond − ε_uncond); the null condition is learned by dropping y (~10–20%) during training.", "w controls fidelity vs diversity: w = 0 unconditional, w = 1 conditional, w > 1 stronger guidance.", "CFG needs no classifier but two forward passes per step."],
+      traps: ["The classifier in classifier guidance must be trained on noisy images.", "Higher guidance gives less diversity, not more.", "In CFG, 'unconditional' uses the same network with a null condition, not a separate model."],
+      quiz: [
+        { q: "With ε_uncond = 0.2, ε_cond = 0.5 and guidance scale w = 3, the CFG prediction ε̃ is:", a: { n: 1.1, tol: 0.001 }, x: "0.2 + 3·(0.5 − 0.2) = 0.2 + 0.9 = 1.1.", r: 2 },
+        { q: "Classifier-free guidance learns the unconditional model by:", o: ["Training a second network", "Randomly dropping the condition (null token) during training", "Using a pre-trained classifier", "Setting t = 0"], a: 1, x: "Condition dropout lets one network learn both modes.", r: 2 },
+        { q: "A drawback of classifier guidance compared with CFG is that it:", o: ["Cannot control the class", "Requires training an extra classifier on noisy images", "Needs paired data", "Has no guidance scale"], a: 1, x: "The classifier must work at every noise level.", r: 1 },
+        { q: "Increasing the guidance scale generally:", o: ["Increases diversity and reduces prompt adherence", "Increases prompt adherence and reduces diversity", "Has no effect", "Removes the need for sampling steps"], a: 1, x: "The classic fidelity–diversity trade-off.", r: 2 },
+        { q: "Which statements about CFG are true? (Select all that apply)", o: ["w = 1 gives the plain conditional prediction", "w = 0 ignores the condition", "It is used in Stable Diffusion", "It needs gradients from an external classifier"], a: [0, 1, 2], x: "No external classifier is involved.", r: 2 }
+      ]
+    },
+    {
+      id: "w8t3", title: "Stable Diffusion: diffusion in latent space", lec: [52, 53], min: 18,
+      hook: "Running a 1,000-step diffusion directly on 512×512×3 images means pushing ~786,000 numbers through a big U-Net a thousand times. What if you first compressed every image 48-fold, and diffused there instead?",
+      reveal: "<p>That is <b>latent diffusion</b>. A pre-trained autoencoder maps 512×512×3 to a 64×64×4 latent (8× smaller per side). Diffusion and denoising happen in that small space, and the decoder turns the final latent back into pixels. Far cheaper, almost no loss in quality, and the basis of Stable Diffusion.</p>",
+      cards: [
+        { h: "The three components", b: `<ol><li><b>VAE (autoencoder)</b>: encoder E: x → z (512×512×3 → 64×64×4, downsampling factor f = 8); decoder D: z → x. Trained separately, then frozen.</li>
+          <li><b>U-Net denoiser</b> operating on latents z_t, conditioned on t and on the text.</li>
+          <li><b>Text encoder</b>: a frozen CLIP ViT-L/14 text transformer turns the prompt into a sequence of token embeddings (77 × 768).</li></ol>
+          <div class="eq">Training: z₀ = E(x); add noise → z_t; minimise ‖ε − ε_θ(z_t, t, τ(prompt))‖²</div><div class="eq">Generation: z_T ~ N(0, I) → T denoising steps with CFG → x = D(z₀)</div>` },
+        { h: "Cross-attention: how words steer pixels", b: `<div class="eq">Attention(Q, K, V) = softmax(QKᵀ/√d)·V,   Q = W_Q·φ(z_t) (image features),   K = W_K·τ(y), V = W_V·τ(y) (text tokens)</div>
+          <p>Inside the U-Net's attention blocks, each spatial location (query) attends over the prompt tokens (keys and values). Image regions pick up the words that are relevant to them. This is how “a red cube on a blue sphere” places colours on the right objects (mostly).</p>`,
+          ask: { q: "In Stable Diffusion's cross-attention, the queries come from:", o: ["The text tokens", "The image (latent) features", "The timestep", "The VAE decoder"], a: 1, x: "Q from the image features; K and V from the text embedding." } },
+        { h: "Why latent diffusion matters, and the hands-on", b: `<ul><li>Much lower compute and memory (≈ 48× fewer values per image), so high resolution runs on consumer GPUs.</li><li>The autoencoder removes imperceptible high-frequency detail, so the diffusion model spends capacity on semantics.</li><li>The same latent model supports text-to-image, image-to-image (start from a noised encoding of an input image), inpainting and super-resolution.</li><li>Hands-on reverse diffusion: load the trained model, start from noise, loop t = T…1 with the update μ_θ + σ_t z, and visualise the image emerging from noise.</li></ul>` }
+      ],
+      keys: ["Latent diffusion: diffuse in the latent space of a pre-trained, frozen VAE (512×512×3 → 64×64×4, f = 8).", "Stable Diffusion = VAE + U-Net denoiser + CLIP text encoder; CFG at sampling.", "Cross-attention: Q from image latents, K and V from text embeddings.", "Generation: z_T ~ N(0, I) → denoise → VAE decoder → image."],
+      traps: ["The VAE runs only at the start (training) and at the end (decoding); denoising happens in latent space.", "The text encoder is frozen; it is not trained with the U-Net in SD v1.", "Self-attention mixes image locations; cross-attention injects the text."],
+      quiz: [
+        { q: "In Stable Diffusion, the diffusion process runs on:", o: ["Raw pixels", "The latent space of a pre-trained autoencoder", "The text embedding", "Class labels"], a: 1, x: "Latent diffusion is the defining idea.", r: 0 },
+        { q: "A 512×512×3 image is encoded into a 64×64×4 latent. By what factor is the number of values reduced?", a: { n: 48, tol: 0.1 }, x: "786,432 / 16,384 = 48.", r: 0 },
+        { q: "How does the text prompt influence the Stable Diffusion U-Net?", o: ["It is concatenated to the noise only at t = T", "Through cross-attention, with text embeddings as keys and values", "It replaces the time embedding", "It selects a different U-Net per word"], a: 1, x: "Cross-attention layers inside the U-Net.", r: 1 },
+        { q: "Which are components of Stable Diffusion? (Select all that apply)", o: ["A VAE encoder/decoder", "A U-Net denoiser", "A CLIP text encoder", "A PatchGAN discriminator used at sampling time"], a: [0, 1, 2], x: "No discriminator is used to sample.", r: 0 },
+        { q: "The main advantage of latent diffusion over pixel-space diffusion is:", o: ["No need for a noise schedule", "Much lower computational cost at similar quality", "No need for a denoiser", "Deterministic samples"], a: 1, x: "Fewer values per step, many fewer FLOPs.", r: 2 }
+      ]
+    }
+  ],
+  test: [
+    { q: "In the diffusion U-Net, information from the encoder reaches the decoder at the same resolution via:", o: ["Skip connections", "The time embedding", "Cross-attention to text", "Dropout"], a: 0, x: "Concatenated skip connections.", t: "w8t1", r: 0 },
+    { q: "Sinusoidal time embeddings in diffusion models are closely related to which transformer component?", o: ["Layer normalisation", "Positional encoding", "Masked attention", "Softmax"], a: 1, x: "The same sin/cos formula, applied to the timestep.", t: "w8t1", r: 1 },
+    { q: "With CFG, ε_uncond = 1.0, ε_cond = 0.6 and w = 2, compute ε̃.", a: { n: 0.2, tol: 0.001 }, x: "1.0 + 2·(0.6 − 1.0) = 1.0 − 0.8 = 0.2.", t: "w8t2", r: 2 },
+    { q: "In classifier guidance, the extra term added to the score is:", o: ["∇ log p(x_t)", "s·∇_{x_t} log p_φ(y | x_t)", "KL(q‖p)", "The CFG difference"], a: 1, x: "The classifier gradient scaled by s.", t: "w8t2", r: 1 },
+    { q: "What happens with a CFG guidance scale of w = 0?", o: ["Pure conditional sampling", "Pure unconditional sampling: the prompt is ignored", "The image is blank", "Sampling is twice as fast"], a: 1, x: "ε̃ = ε_uncond.", t: "w8t2", r: 2 },
+    { q: "During CFG training, the condition is replaced by a null token:", o: ["Never", "For a random fraction (about 10–20%) of training examples", "Always", "Only at t = T"], a: 1, x: "Condition dropout.", t: "w8t2", r: 2 },
+    { q: "In Stable Diffusion, which component is applied last to produce the final image?", o: ["CLIP text encoder", "U-Net", "VAE decoder", "Noise scheduler"], a: 2, x: "The denoised latent is decoded to pixels.", t: "w8t3", r: 0 },
+    { q: "In cross-attention, K and V are computed from:", o: ["The latent image features", "The text embeddings", "The timestep", "Random noise"], a: 1, x: "Queries come from the image features.", t: "w8t3", r: 1 },
+    { q: "Which tasks can a latent diffusion model perform? (Select all that apply)", o: ["Text-to-image", "Image-to-image (starting from a noised input encoding)", "Inpainting", "Exact lossless image compression"], a: [0, 1, 2], x: "The VAE is lossy, so compression is not exact.", t: "w8t3", r: 2 },
+    { q: "The typical downsampling factor of Stable Diffusion's autoencoder per spatial side is:", a: { n: 8, tol: 0 }, x: "512 → 64.", t: "w8t3", r: 0 }
+  ]
+});

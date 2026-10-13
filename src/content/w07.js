@@ -1,0 +1,111 @@
+COURSE.weeks.push({
+  id: "w7", n: 7, title: "Diffusion models I",
+  tagline: "Forward noising, Gaussians, DDPM forward and reverse, training objective.",
+  intro: "Diffusion models learn to create by learning to clean. Destroy images with Gaussian noise in many small steps (forward), then train a network to undo one step at a time (reverse). This week covers the intuition, the probability toolkit, and the DDPM forward and reverse processes with their training objective. Lectures 44–48.",
+  topics: [
+    {
+      id: "w7t1", title: "Diffusion: create by learning to clean", lec: [44], min: 16,
+      hook: "Drop ink into water and it spreads until the glass is uniformly cloudy. Run the film backwards and the ink gathers into a drop. Physics says the reverse never happens on its own. Why might a neural network be able to learn it anyway?",
+      reveal: "<p>Because each forward step adds only a <b>tiny</b> amount of Gaussian noise, so undoing a single step is a simple, nearly Gaussian problem a network can learn. Chain a thousand learned small reversals and pure noise turns back into an image. That is a diffusion model.</p>",
+      cards: [
+        { h: "Two processes", b: `<div class="tablewrap"><table><tr><th></th><th>Forward (diffusion)</th><th>Reverse (denoising)</th></tr>
+          <tr><td>Direction</td><td>x₀ (clean) → x_T (≈ pure noise)</td><td>x_T ~ N(0, I) → x₀</td></tr><tr><td>Written as</td><td>q(x_t | x_(t−1))</td><td>p_θ(x_(t−1) | x_t)</td></tr><tr><td>Learned?</td><td>No: fixed, predefined Gaussian noise addition</td><td>Yes: a neural network (θ = its weights) predicts the noise</td></tr><tr><td>Role</td><td>Creates training targets</td><td>Generates new data</td></tr></table></div>
+          <p>T is typically 1,000 steps. Each step adds a small amount of noise according to a <b>noise schedule</b>.</p>` },
+        { h: "Why diffusion won image generation", b: `<ul><li><b>High-quality, diverse samples</b>, competitive with or better than GANs.</li><li><b>Stable training</b>: a simple regression loss (predict the noise); no adversarial game, no mode collapse.</li><li>A principled likelihood-based foundation (related to VAEs: a diffusion model is like a hierarchical VAE with a fixed encoder).</li><li><b>Drawback</b>: slow sampling, because generation runs the network once per step (hundreds to a thousand passes). DDIM and latent diffusion reduce the cost.</li></ul>`,
+          ask: { q: "Compared with GANs, diffusion models are known for:", o: ["Unstable adversarial training", "Stable training but slow, iterative sampling", "One-step generation", "Needing paired data"], a: 1, x: "A simple MSE loss gives stable training; sampling needs many network evaluations." } },
+        { h: "The three-model comparison you should be able to recite", b: `<div class="tablewrap"><table><tr><th></th><th>VAE</th><th>GAN</th><th>Diffusion</th></tr><tr><td>Sample quality</td><td>Blurry</td><td>Sharp</td><td>Sharp</td></tr><tr><td>Diversity / mode coverage</td><td>Good</td><td>Mode collapse risk</td><td>Good</td></tr><tr><td>Training</td><td>Stable (ELBO)</td><td>Unstable (min-max)</td><td>Stable (noise MSE)</td></tr><tr><td>Sampling speed</td><td>Fast (one pass)</td><td>Fast (one pass)</td><td>Slow (many steps)</td></tr></table></div>` }
+      ],
+      keys: ["Forward process q(x_t | x_(t−1)): fixed Gaussian noise addition, nothing learned.", "Reverse process p_θ(x_(t−1) | x_t): learned denoising network.", "T ≈ 1000 steps; x_T ≈ N(0, I).", "Pros: quality, diversity, stable training. Con: slow sampling."],
+      traps: ["θ appears only in the reverse process.", "The forward process destroys data; generation runs the reverse process.", "'Diffusion' does not mean the model diffuses pixels spatially."],
+      quiz: [
+        { q: "Which process in a diffusion model contains learnable parameters?", o: ["The forward process", "The reverse (denoising) process", "Both", "Neither"], a: 1, x: "The forward process is a fixed Gaussian corruption.", r: 0 },
+        { q: "Starting from pure Gaussian noise and producing an image corresponds to:", o: ["The forward process", "The reverse process", "The encoder", "The discriminator"], a: 1, x: "Generation = iteratively denoising x_T.", r: 0 },
+        { q: "Which are advantages of diffusion models over GANs? (Select all that apply)", o: ["Stable training", "Good mode coverage / diversity", "Faster sampling", "No adversarial min-max game"], a: [0, 1, 3], x: "Sampling is slower because it is iterative.", r: 1 },
+        { q: "The typical number of diffusion steps T used in DDPM is about:", o: ["1", "10", "1000", "1,000,000"], a: 2, x: "DDPM used T = 1000.", r: 0 }
+      ]
+    },
+    {
+      id: "w7t2", title: "Maths toolkit: Gaussians, covariance, Markov chains", lec: [45], min: 16,
+      hook: "Your dataset has height and weight for four people. Height goes up, weight goes up. How would you capture “they move together” in one number, and why would a model of million-pixel images care?",
+      reveal: "<p>That number is the <b>covariance</b>. Pixels in an image are correlated just like height and weight, so modelling images needs <b>multivariate</b> Gaussians with a covariance matrix. Diffusion models use the simplest version: an isotropic covariance σ²I.</p>",
+      cards: [
+        { h: "Gaussian refresher", b: `<div class="eq">N(x; μ, σ²) = 1/√(2πσ²) · exp(−(x − μ)² / (2σ²))</div>
+          <ul><li>μ: mean (centre). σ²: variance (spread). σ: standard deviation.</li><li>68% / 95% / 99.7% of the mass lies within μ ± 1σ / 2σ / 3σ.</li><li>The factor 1/√(2πσ²) normalises the total probability to 1; the exponential makes the density fall off with distance from the mean.</li><li><b>Standard Gaussian</b>: N(0, 1), mean 0 and variance 1.</li></ul>` },
+        { h: "Multivariate Gaussians and covariance", b: `<div class="eq">N(x; μ, Σ) with x, μ ∈ ℝ^d, Σ = d × d covariance matrix</div>
+          <ul><li>Diagonal of Σ: variances of each variable. Off-diagonal: covariances (Σ is symmetric).</li><li>Cov(X₁, X₂) = E[(X₁ − μ₁)(X₂ − μ₂)]. Positive (temperature vs ice-cream sales), negative (temperature vs hot-chocolate sales), or ≈ 0 (unrelated).</li><li>Population variance divides by n; sample variance divides by n − 1.</li></ul>
+          <p><b>Lecture example</b>: heights 150, 160, 170, 180 (mean 165) and weights 50, 55, 65, 72 (mean 60.5). Var(height) = (225 + 25 + 25 + 225)/4 = <b>125</b>. Cov(h, w) = [(−15)(−10.5) + (−5)(−5.5) + (5)(4.5) + (15)(11.5)]/4 = (157.5 + 27.5 + 22.5 + 172.5)/4 = <b>95</b>.</p>`,
+          ask: { q: "Var(weight) for 50, 55, 65, 72 (population, mean 60.5) is:", o: ["73.25", "99", "125", "60.5"], a: 0, x: "Squared deviations 110.25, 30.25, 20.25, 132.25 → sum 293 → 293/4 = 73.25. The lecture left this one for you to compute." } },
+        { h: "Markov chains and why Gaussians are convenient", b: `<ul><li><b>Markov property</b>: x_t depends only on x_(t−1), not on the earlier history. The forward process is a Markov chain: q(x_(1:T) | x₀) = Π_t q(x_t | x_(t−1)).</li><li>Sum of independent Gaussians is Gaussian: if a ~ N(0, σ₁²) and b ~ N(0, σ₂²) then a + b ~ N(0, σ₁² + σ₂²). This is what lets many small noise steps collapse into one closed-form jump (next topic).</li><li>Scaling: c·N(μ, σ²) = N(cμ, c²σ²).</li></ul>` }
+      ],
+      keys: ["Gaussian pdf 1/√(2πσ²)·exp(−(x−μ)²/2σ²); 68–95–99.7 rule; standard normal N(0, 1).", "Multivariate Gaussian uses a covariance matrix: diagonal = variances, off-diagonal = covariances, symmetric.", "Cov(X,Y) = E[(X−μ_X)(Y−μ_Y)]; population variance /n, sample /(n−1).", "Markov chain: x_t depends only on x_(t−1).", "Sum of independent Gaussians is Gaussian with added variances."],
+      traps: ["Covariance has units; correlation is the normalised version in [−1, 1].", "Cov(X₁,X₂) = Cov(X₂,X₁): the matrix is symmetric.", "Scaling a Gaussian by c scales the variance by c²."],
+      quiz: [
+        { q: "What fraction of a Gaussian's probability mass lies within μ ± 2σ (approximately)?", o: ["68%", "95%", "99.7%", "50%"], a: 1, x: "68–95–99.7 rule.", r: 0 },
+        { q: "Compute the population covariance of X = [1, 2, 3] and Y = [2, 4, 6].", a: { n: 1.3333, tol: 0.01 }, x: "Means 2 and 4. Products of deviations: (−1)(−2) + 0 + (1)(2) = 4 → 4/3 ≈ 1.333.", r: 1 },
+        { q: "In a covariance matrix, the diagonal entries are:", o: ["Covariances between different variables", "Variances of the individual variables", "Means", "Always zero"], a: 1, x: "Off-diagonal entries are the covariances.", r: 1 },
+        { q: "If a ~ N(0, 0.3) and b ~ N(0, 0.6) are independent, a + b follows:", o: ["N(0, 0.9)", "N(0, 0.45)", "N(0, 0.18)", "Not Gaussian"], a: 0, x: "Variances add for independent Gaussians.", r: 2 },
+        { q: "The forward diffusion process is a Markov chain because:", o: ["Each x_t depends only on x_(t−1)", "It is learned", "It uses a transformer", "It is deterministic"], a: 0, x: "q(x_t | x_(t−1)) does not look further back.", r: 2 }
+      ]
+    },
+    {
+      id: "w7t3", title: "DDPM forward process and the noise schedule", lec: [46, 48], min: 18, w: "diffusion",
+      hook: "To get the noisy image at step 700, do you really have to add noise 700 times in a row? There is a shortcut. Can you see why one should exist?",
+      reveal: "<p>Each step scales the image and adds independent Gaussian noise. Scaled Gaussians plus Gaussians stay Gaussian, so 700 steps collapse into a single Gaussian jump: <b>x_t = √ᾱ_t · x₀ + √(1 − ᾱ_t) · ε</b>. Training can sample any t directly.</p>",
+      cards: [
+        { h: "One forward step", b: `<div class="eq">q(x_t | x_(t−1)) = N(x_t; √(1 − β_t) · x_(t−1), β_t · I)</div><div class="eq">x_t = √(1 − β_t) · x_(t−1) + √β_t · ε,   ε ~ N(0, I)</div>
+          <ul><li>β_t ∈ (0, 1) is the <b>noise variance schedule</b>: β₁ &lt; β₂ &lt; … &lt; β_T. DDPM uses a linear schedule from β₁ = 10⁻⁴ to β_T = 0.02.</li><li>The √(1 − β_t) scaling keeps the overall variance from blowing up, so x_T ends close to N(0, I).</li><li>Small t: little noise. Large t: a lot. The signal-to-noise ratio falls over time.</li></ul>` },
+        { h: "The closed form: jump to any t", b: `<div class="eq">α_t = 1 − β_t,     ᾱ_t = Π_{s=1..t} α_s</div><div class="eq">q(x_t | x₀) = N(x_t; √ᾱ_t · x₀, (1 − ᾱ_t) · I)   ⇔   x_t = √ᾱ_t · x₀ + √(1 − ᾱ_t) · ε</div>
+          <ul><li>ᾱ_t falls from ≈ 1 (clean) to ≈ 0 (pure noise).</li><li>SNR(t) = ᾱ_t / (1 − ᾱ_t).</li><li>Training samples a random t and makes x_t in one shot. No simulation loop.</li></ul>`, w: "diffusion" },
+        { h: "Why the schedule matters", b: `<ul><li>Destroy too fast (large β early): the data turns to noise in a few steps and each reverse step must undo a huge change, which is hard to learn.</li><li>Destroy too slowly: you need very many steps, so training and sampling are inefficient.</li><li>The schedule must reach (almost) complete destruction by t = T so that sampling can start from N(0, I).</li><li>The <b>cosine schedule</b> (Improved DDPM) destroys information more evenly over time than the linear one.</li></ul>
+          <p><b>Hands-on</b>: implement β (linear), compute α and ᾱ with cumulative products, write <code>q_sample(x0, t, noise)</code> = sqrt_alphas_cumprod[t]·x0 + sqrt_one_minus_alphas_cumprod[t]·noise, and plot an image at t = 0, 100, 300, 600, 999.</p>`,
+          ask: { q: "β₁ = 0.1 and β₂ = 0.2. What is ᾱ₂?", o: ["0.72", "0.3", "0.98", "0.02"], a: 0, x: "ᾱ₂ = (1 − 0.1)(1 − 0.2) = 0.9 × 0.8 = 0.72." } }
+      ],
+      keys: ["q(x_t|x_(t−1)) = N(√(1−β_t)·x_(t−1), β_t·I).", "α_t = 1 − β_t; ᾱ_t = Π α_s; x_t = √ᾱ_t·x₀ + √(1−ᾱ_t)·ε.", "DDPM linear schedule: β from 10⁻⁴ to 0.02 over T = 1000.", "Schedule trade-off: too fast → hard reverse learning; too slow → too many steps.", "The cosine schedule spreads the destruction more evenly."],
+      traps: ["√ᾱ_t multiplies x₀; √(1 − ᾱ_t) multiplies ε. Don't swap them.", "ᾱ is a product, not a sum.", "β is a variance, so the noise term uses √β."],
+      quiz: [
+        { q: "Given ᾱ_t = 0.64, x₀ = 1.0 and ε = 0.5, compute x_t = √ᾱ_t·x₀ + √(1−ᾱ_t)·ε.", a: { n: 1.1, tol: 0.001 }, x: "√0.64 = 0.8; √0.36 = 0.6. x_t = 0.8·1 + 0.6·0.5 = 0.8 + 0.3 = 1.1.", r: 1 },
+        { q: "With constant β = 0.1 for 3 steps, compute ᾱ₃ (3 decimals).", a: { n: 0.729, tol: 0.001 }, x: "0.9³ = 0.729.", r: 1 },
+        { q: "In q(x_t | x_(t−1)) = N(√(1−β_t)·x_(t−1), β_t·I), the variance of the added noise is:", o: ["√β_t", "β_t", "1 − β_t", "ᾱ_t"], a: 1, x: "β_t is the variance, so the noise standard deviation is √β_t.", r: 0 },
+        { q: "Why is the closed form q(x_t | x₀) important for training?", o: ["It removes the need for a neural network", "It lets you sample a noisy x_t at any random t in one step", "It makes the reverse process deterministic", "It defines the loss of GANs"], a: 1, x: "No need to simulate t sequential steps for each training example.", r: 1 },
+        { q: "What goes wrong if the noise schedule destroys the image too quickly? (Select all that apply)", o: ["Each reverse step has to undo a large change, making learning hard", "The data becomes pure noise within a few steps", "Training no longer needs a network", "Sampling becomes impossible"], a: [0, 1], x: "The lecture names this trade-off; too slow, instead, wastes steps.", r: 2 }
+      ]
+    },
+    {
+      id: "w7t4", title: "DDPM reverse process and the training objective", lec: [47], min: 19,
+      hook: "The network has to undo one noising step. It could predict the clean image x₀, the slightly cleaner x_(t−1), or the noise ε that was added. DDPM predicts the noise. Why might that be the easiest target?",
+      reveal: "<p>The noise ε always has the same scale, N(0, I), at every t, so the regression target is well normalised. Knowing ε and x_t gives back x₀, and from that the reverse mean. The resulting loss is just an MSE: ‖ε − ε_θ(x_t, t)‖².</p>",
+      cards: [
+        { h: "The reverse step", b: `<div class="eq">p_θ(x_(t−1) | x_t) = N(x_(t−1); μ_θ(x_t, t), σ_t² I)</div>
+          <ul><li>The <b>true reverse</b> q(x_(t−1) | x_t) is intractable (it would need the whole data distribution). But conditioned on x₀, q(x_(t−1) | x_t, x₀) is a tractable Gaussian, which serves as the training target.</li><li>For small β_t the reverse step is approximately Gaussian, which justifies a Gaussian p_θ.</li><li>The variance σ_t² is fixed (β_t or β̃_t) in DDPM; only the mean is learned.</li></ul>` },
+        { h: "Predict the noise", b: `<div class="eq">μ_θ(x_t, t) = (1/√α_t) · ( x_t − (β_t / √(1 − ᾱ_t)) · ε_θ(x_t, t) )</div>
+          <div class="eq">Simplified loss:  L_simple = E_{t, x₀, ε} ‖ ε − ε_θ( √ᾱ_t x₀ + √(1−ᾱ_t) ε , t ) ‖²</div>
+          <p>Derived from the variational bound (ELBO): each step's KL between Gaussians reduces to a weighted MSE between means, which becomes MSE on the noise. Ho et al. drop the weights.</p>` },
+        { h: "Algorithms you should be able to write down", b: `<p><b>Training</b> (repeat until converged):</p><ol><li>x₀ ~ data; t ~ Uniform{1, …, T}; ε ~ N(0, I)</li><li>x_t = √ᾱ_t x₀ + √(1−ᾱ_t) ε</li><li>Gradient step on ‖ε − ε_θ(x_t, t)‖²</li></ol>
+          <p><b>Sampling</b>:</p><ol><li>x_T ~ N(0, I)</li><li>for t = T … 1: z ~ N(0, I) if t > 1 else 0;  x_(t−1) = (1/√α_t)(x_t − (β_t/√(1−ᾱ_t)) ε_θ(x_t, t)) + σ_t z</li><li>return x₀</li></ol>
+          <p>One network serves all t, so it needs t as an input (a time embedding, see the U-Net next week). Sampling needs T network evaluations, which is why DDPM is slow. <b>DDIM</b> takes larger deterministic steps.</p>`,
+          ask: { q: "In DDPM training, the network ε_θ takes as input:", o: ["x₀ only", "x_t and t", "ε only", "x_T only"], a: 1, x: "It predicts the noise in x_t at time t." } }
+      ],
+      keys: ["Reverse step p_θ(x_(t−1)|x_t) = N(μ_θ(x_t,t), σ_t²I); the variance is fixed and the mean is learned.", "The true reverse q(x_(t−1)|x_t) is intractable; q(x_(t−1)|x_t, x₀) is tractable.", "ε-prediction: L_simple = E‖ε − ε_θ(x_t, t)‖² (MSE).", "Training: random t, closed-form x_t, regress the noise. Sampling: T iterative denoising steps from N(0, I).", "μ_θ = (1/√α_t)(x_t − β_t/√(1−ᾱ_t)·ε_θ)."],
+      traps: ["The loss is MSE on noise, not on pixels and not adversarial.", "The sampling loop runs from t = T down to 1 and adds fresh noise except at the last step.", "The network must be told t."],
+      quiz: [
+        { q: "The simplified DDPM training loss is:", o: ["BCE between real and fake", "‖x₀ − x_T‖²", "‖ε − ε_θ(x_t, t)‖²", "KL(q(z|x) ‖ N(0,I))"], a: 2, x: "The network learns to predict the added noise.", r: 1 },
+        { q: "Why is q(x_(t−1) | x_t, x₀) used as a training target instead of q(x_(t−1) | x_t)?", o: ["It is faster", "Conditioning on x₀ makes it a tractable Gaussian, while q(x_(t−1)|x_t) is intractable", "It has no variance", "It is learned"], a: 1, x: "The unconditioned reverse requires marginalising over the data distribution.", r: 0 },
+        { q: "Which steps belong to the DDPM training algorithm? (Select all that apply)", o: ["Sample t uniformly from {1,…,T}", "Form x_t in closed form from x₀ and ε", "Run the full T-step sampling chain for every example", "Minimise the MSE between ε and ε_θ(x_t, t)"], a: [0, 1, 3], x: "Sequential sampling is only needed at generation time.", r: 2 },
+        { q: "To generate one image with T = 1000, a DDPM evaluates its network about how many times?", a: { n: 1000, tol: 0 }, x: "One denoising pass per step, which is why DDPM sampling is slow.", r: 2 },
+        { q: "In DDPM, the variance of each reverse step p_θ(x_(t−1)|x_t) is:", o: ["Learned by a separate network", "Fixed to a schedule-based value (β_t or β̃_t)", "Always 1", "Always 0"], a: 1, x: "DDPM learns only the mean; Improved DDPM later learned the variance.", r: 0 }
+      ]
+    }
+  ],
+  test: [
+    { q: "The forward diffusion process is fixed and has no learnable parameters because:", o: ["It is a predefined Gaussian noising procedure", "It uses a frozen pre-trained network", "It is identical to the reverse process", "It is discrete"], a: 0, x: "Noise is added according to a known schedule.", t: "w7t1", r: 0 },
+    { q: "Which comparison is correct?", o: ["GANs are slow to sample; diffusion is one-step", "Diffusion models train stably but sample slowly", "VAEs give sharper samples than GANs", "Diffusion models suffer mode collapse more than GANs"], a: 1, x: "Stable MSE training; iterative sampling.", t: "w7t1", r: 2 },
+    { q: "Population variance of [2, 4, 6, 8]:", a: { n: 5, tol: 0.001 }, x: "Mean 5; squared deviations 9, 1, 1, 9 → 20/4 = 5.", t: "w7t2", r: 1 },
+    { q: "Two variables with negative covariance tend to:", o: ["Increase together", "Move in opposite directions", "Be independent", "Have equal variances"], a: 1, x: "As one goes up, the other goes down (temperature vs hot-chocolate sales).", t: "w7t2", r: 1 },
+    { q: "Using x_t = √ᾱ_t x₀ + √(1−ᾱ_t) ε with ᾱ_t = 0.36, x₀ = 2 and ε = −1, compute x_t.", a: { n: 0.4, tol: 0.001 }, x: "√0.36 = 0.6, √0.64 = 0.8 → 0.6·2 + 0.8·(−1) = 1.2 − 0.8 = 0.4.", t: "w7t3", r: 1 },
+    { q: "As t increases in the forward process, ᾱ_t:", o: ["Increases towards 1", "Decreases towards 0", "Stays constant", "Oscillates"], a: 1, x: "It is a product of numbers below 1.", t: "w7t3", r: 1 },
+    { q: "The DDPM linear schedule increases β_t from:", o: ["0.02 to 10⁻⁴", "10⁻⁴ to 0.02", "0 to 1", "0.5 to 0.9"], a: 1, x: "Small noise early, larger later.", t: "w7t3", r: 0 },
+    { q: "Which of the following does the denoising network ε_θ(x_t, t) output in DDPM?", o: ["A class label", "The predicted noise ε that was added", "The variance schedule", "A real/fake probability"], a: 1, x: "Noise prediction (ε-parameterisation).", t: "w7t4", r: 1 },
+    { q: "During DDPM sampling, the final step (t = 1) differs from the others because:", o: ["It uses a different network", "No fresh noise z is added", "It doubles the noise", "It skips the network"], a: 1, x: "z = 0 at t = 1 so the output is the clean estimate.", t: "w7t4", r: 2 },
+    { q: "Which statements are true? (Select all that apply)", o: ["q(x_t | x₀) has a closed form", "Training samples t uniformly at random", "The reverse process starts from x_T ~ N(0, I)", "The forward process requires backpropagation"], a: [0, 1, 2], x: "The forward process has nothing to train.", t: "w7t4", r: 2 }
+  ]
+});

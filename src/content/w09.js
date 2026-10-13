@@ -1,0 +1,108 @@
+COURSE.weeks.push({
+  id: "w9", n: 9, title: "Sequence models and NLP foundations",
+  tagline: "Text preprocessing, Word2Vec/GloVe, RNN, LSTM, attention, the Transformer encoder.",
+  intro: "The course turns from images to language. First, how raw text becomes numbers (preprocessing, embeddings). Then the sequence models: RNNs, LSTMs and their limits, which motivate attention and the Transformer encoder. Lectures 54–58.",
+  topics: [
+    {
+      id: "w9t1", title: "NLP foundations: from text to vectors", lec: [54], min: 18, w: "w2v",
+      hook: "A computer only understands numbers. If you give the word “king” the number 7 and “queen” the number 8, is “queen” now more similar to “king” than to “banana” (number 9,000)? What is wrong with that scheme?",
+      reveal: "<p>Integer IDs and one-hot vectors carry <b>no meaning</b>: every pair of words is equally far apart, so arithmetic on IDs is meaningless. <b>Word embeddings</b> fix this: dense vectors learned so that words used in similar contexts land close together, and directions carry relations (king − man + woman ≈ queen).</p>",
+      cards: [
+        { h: "The preprocessing pipeline", b: `<ul><li><b>Tokenisation</b>: split text into units (words, subwords, characters).</li><li><b>Lowercasing, punctuation and noise removal.</b></li><li><b>Stop-word removal</b>: drop very frequent, low-information words (the, is, and), useful for classic models.</li><li><b>Stemming</b>: crude suffix chopping (studies → studi). <b>Lemmatisation</b>: dictionary-based reduction to the base form (studies → study, better → good).</li></ul>`,
+          ask: { q: "Reducing “better” to “good” requires:", o: ["Stemming", "Lemmatisation", "Stop-word removal", "Tokenisation"], a: 1, x: "Only lemmatisation uses vocabulary and morphology to find the base form." } },
+        { h: "Representing text", b: `<div class="tablewrap"><table><tr><th>Method</th><th>Idea</th><th>Limitation</th></tr>
+          <tr><td>One-hot</td><td>Vector of size |V| with a single 1</td><td>Huge, sparse, no similarity</td></tr><tr><td>Bag of Words</td><td>Word counts per document</td><td>Ignores order and meaning</td></tr><tr><td>TF-IDF</td><td>tf(t, d) × log(N / df(t)): rewards words frequent in a document but rare overall</td><td>Still sparse, no semantics</td></tr><tr><td>Word embeddings</td><td>Dense, low-dimensional (50–300) learned vectors</td><td>One static vector per word</td></tr></table></div>` },
+        { h: "Word2Vec and GloVe", b: `<ul><li><b>Distributional hypothesis</b>: “you shall know a word by the company it keeps”.</li><li><b>Word2Vec</b> (Mikolov 2013), a shallow network trained on local context windows. <b>CBOW</b> predicts the centre word from its context; <b>Skip-gram</b> predicts the context words from the centre word (better for rare words). Speed-ups: negative sampling, hierarchical softmax.</li><li><b>GloVe</b> (Stanford): learns vectors from the <b>global word–word co-occurrence matrix</b>, so that w_i · w_j ≈ log X_ij.</li><li>Similarity: <b>cosine similarity</b> = u·v / (‖u‖‖v‖).</li><li>Limitation: <b>static</b> embeddings, so a polysemous word like “bank” gets one vector. Contextual models (ELMo, BERT) give a different vector for each use.</li></ul>`, w: "w2v" }
+      ],
+      keys: ["Pipeline: tokenisation → normalisation → stop-word removal → stemming / lemmatisation.", "Stemming chops suffixes; lemmatisation returns dictionary base forms.", "TF-IDF = tf × log(N/df).", "Word2Vec: CBOW (context → word), Skip-gram (word → context); local windows.", "GloVe: global co-occurrence statistics. Both give static embeddings; similarity = cosine."],
+      traps: ["CBOW and Skip-gram are often swapped in exam options.", "GloVe uses global counts; Word2Vec uses local prediction.", "Static embeddings cannot disambiguate word senses."],
+      quiz: [
+        { q: "Which Word2Vec architecture predicts the surrounding context words from the centre word?", o: ["CBOW", "Skip-gram", "GloVe", "TF-IDF"], a: 1, x: "Skip-gram: word → context. CBOW: context → word.", r: 2 },
+        { q: "GloVe embeddings are learned primarily from:", o: ["Local next-word prediction", "A global word–word co-occurrence matrix", "Character n-grams only", "Labelled sentiment data"], a: 1, x: "GloVe = Global Vectors.", r: 2 },
+        { q: "Compute the cosine similarity between u = [1, 0] and v = [1, 1] (3 decimals).", a: { n: 0.707, tol: 0.002 }, x: "u·v = 1; ‖u‖ = 1; ‖v‖ = √2 → 1/√2 ≈ 0.707.", r: 2 },
+        { q: "A term appears 3 times in a document; it occurs in 10 of 1000 documents. Using tf × log₁₀(N/df), compute TF-IDF.", a: { n: 6, tol: 0.01 }, x: "3 × log₁₀(1000/10) = 3 × 2 = 6.", r: 1 },
+        { q: "Which are limitations of one-hot word representations? (Select all that apply)", o: ["Very high dimensional", "Sparse", "No notion of similarity between words", "Captures word order"], a: [0, 1, 2], x: "One-hot vectors are equidistant and order-free.", r: 1 }
+      ]
+    },
+    {
+      id: "w9t2", title: "RNNs and LSTMs", lec: [55, 58], min: 20, w: "lstm",
+      hook: "“The cat, which already ate a lot of the fish that the neighbours brought over last week, ___ full.” Was or were? You need to remember a word from 15 words back. How could a network carry that memory along?",
+      reveal: "<p>A <b>recurrent</b> network keeps a hidden state h_t that it updates word by word, a running summary. Plain RNNs forget long-range information because gradients vanish over many steps. The <b>LSTM</b> adds a gated cell state that can carry “cat → singular” across long gaps.</p>",
+      cards: [
+        { h: "Why sequences need special models", b: `<p>Language, speech and time series have <b>order</b> and <b>temporal dependencies</b>, and variable length. A feed-forward net takes a fixed-size input and has no memory.</p>
+          <div class="eq">RNN:  h_t = tanh(W_xh x_t + W_hh h_(t−1) + b),    y_t = W_hy h_t</div>
+          <ul><li>The same weights are shared across all time steps.</li><li>Training: <b>backpropagation through time</b> (BPTT), i.e. unroll and backprop.</li><li>Configurations: many-to-one (sentiment), one-to-many (captioning), many-to-many (tagging, translation with an encoder-decoder).</li></ul>` },
+        { h: "Vanishing and exploding gradients", b: `<p>BPTT multiplies by W_hh (and tanh′ ≤ 1) once per step. Over 50 steps: 0.9⁵⁰ ≈ 0.005 (<b>vanishing</b>: no long-term learning) or 1.1⁵⁰ ≈ 117 (<b>exploding</b>: unstable). Exploding gradients are fixed with <b>gradient clipping</b>; vanishing gradients need a new architecture.</p>` },
+        { h: "LSTM: gates around a memory cell", b: `<div class="eq">f_t = σ(W_f[h_(t−1), x_t] + b_f)        forget gate</div><div class="eq">i_t = σ(W_i[h_(t−1), x_t] + b_i)        input gate</div><div class="eq">g_t = tanh(W_g[h_(t−1), x_t] + b_g)     candidate values (often written C̃_t)</div><div class="eq">o_t = σ(W_o[h_(t−1), x_t] + b_o)        output gate</div><div class="eq">c_t = f_t ⊙ c_(t−1) + i_t ⊙ g_t       h_t = o_t ⊙ tanh(c_t)</div>
+          <p>The cell state c_t is updated <b>additively</b>; when f_t ≈ 1, gradients pass through almost unchanged. The <b>GRU</b> is a lighter cousin with 2 gates (update, reset) and no separate cell state.</p>`, w: "lstm",
+          ask: { q: "Which LSTM gate decides how much of the previous cell state to keep?", o: ["Input gate", "Forget gate", "Output gate", "Candidate"], a: 1, x: "c_t = f_t ⊙ c_(t−1) + …" } },
+        { h: "Hands-on: text with RNN/LSTM in Keras", b: `<ul><li>Tokenise and convert text to integer sequences, then <code>pad_sequences</code> to a fixed length.</li><li><code>Embedding(vocab_size, 128)</code> → <code>SimpleRNN</code> or <code>LSTM(64)</code> → <code>Dense(1, activation='sigmoid')</code> for binary sentiment.</li><li>The LSTM typically beats SimpleRNN on longer reviews. Bidirectional LSTMs read both directions.</li></ul>` }
+      ],
+      keys: ["RNN: h_t = tanh(W_xh x_t + W_hh h_(t−1) + b); weights shared across time; trained with BPTT.", "Vanishing/exploding gradients over long sequences; clipping fixes explosions.", "LSTM: forget, input and output gates (sigmoid) + tanh candidate; c_t = f⊙c_(t−1) + i⊙g; h_t = o⊙tanh(c_t).", "GRU: update and reset gates, no separate cell state.", "RNNs are sequential, so they cannot parallelise over time."],
+      traps: ["The gates use sigmoid (0–1); the candidate and the output squashing use tanh.", "Gradient clipping does not fix vanishing gradients.", "An LSTM has 4 weight blocks (f, i, g, o); a GRU has 3."],
+      quiz: [
+        { q: "LSTM cell update: f = 0.5, c_(t−1) = 2, i = 0.4, g = 0.5. Compute c_t.", a: { n: 1.2, tol: 0.001 }, x: "0.5·2 + 0.4·0.5 = 1 + 0.2 = 1.2.", r: 2 },
+        { q: "Gradient clipping is mainly used to address:", o: ["Vanishing gradients", "Exploding gradients", "Overfitting", "Tokenisation errors"], a: 1, x: "It caps gradient norms; vanishing gradients need architectural fixes like the LSTM.", r: 1 },
+        { q: "Which statements about vanilla RNNs are true? (Select all that apply)", o: ["The same weights are used at every time step", "They are trained with backpropagation through time", "They capture very long-range dependencies easily", "They process tokens sequentially"], a: [0, 1, 3], x: "Long-range dependencies suffer from vanishing gradients.", r: 0 },
+        { q: "Which activation is used for the LSTM gates (forget, input, output)?", o: ["ReLU", "Sigmoid", "Softmax", "Linear"], a: 1, x: "Gates must lie in [0, 1] to act as soft switches.", r: 2 },
+        { q: "With o_t = 1 and c_t = 0, the LSTM hidden state h_t equals:", a: { n: 0, tol: 0.001 }, x: "h_t = o_t · tanh(c_t) = 1 · tanh(0) = 0.", r: 2 }
+      ]
+    },
+    {
+      id: "w9t3", title: "Attention: from LSTMs to Transformers", lec: [56], min: 20, w: "attention",
+      hook: "An encoder LSTM reads a 50-word sentence and squeezes it into one fixed-size vector, then a decoder writes the translation from that single vector. What would you do if you were the decoder and had to translate word 37?",
+      reveal: "<p>You would <b>look back</b> at the relevant source words instead of relying on one summary vector. That is <b>attention</b>: at each step, compute relevance scores against all encoder states and take a weighted average. The Transformer then asked whether you need the recurrence at all, and answered no: “Attention is all you need”.</p>",
+      cards: [
+        { h: "The bottleneck of seq2seq", b: `<ul><li>Encoder–decoder RNNs compress the whole input into a final hidden state, a <b>fixed-length bottleneck</b>, so performance drops on long sentences.</li><li>RNNs are <b>sequential</b>: step t needs step t−1, so there is no parallelism across tokens, and long paths mean weak long-range gradients.</li><li><b>Bahdanau (additive) attention</b>: the decoder computes weights over all encoder states at every step, a = softmax(score(s_t, h_i)), and uses the context c_t = Σ a_i h_i. This is <b>encoder–decoder attention</b>.</li></ul>` },
+        { h: "Scaled dot-product self-attention", b: `<div class="eq">Q = XW_Q,  K = XW_K,  V = XW_V          Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V</div>
+          <ul><li>Each token's <b>query</b> is compared with every token's <b>key</b>; the softmax weights mix the <b>values</b>.</li><li>Dividing by √d_k keeps dot products from growing with dimension, which would saturate the softmax and shrink gradients.</li><li>Every token attends to every other in one step: path length O(1), fully parallel, cost O(n²) in sequence length.</li></ul>`, w: "attention" },
+        { h: "Multi-head attention, masks and positions", b: `<div class="eq">MultiHead(Q,K,V) = Concat(head₁, …, head_h)·W_O,   head_i = Attention(QW_Qⁱ, KW_Kⁱ, VW_Vⁱ)</div>
+          <ul><li><b>Multiple heads</b> (8 in the original, d_model = 512, d_k = 64 per head) learn different relations: syntax, coreference, position.</li><li><b>Masked (causal) self-attention</b> in the decoder: future positions are set to −∞ before the softmax, so token t sees only ≤ t. This keeps generation autoregressive.</li><li><b>Positional encoding</b>: attention is permutation-invariant, so order must be injected (sin/cos, next topic).</li></ul>`,
+          ask: { q: "Why is a mask applied in the decoder's self-attention?", o: ["To speed up training", "To stop a position attending to future tokens", "To remove stop words", "To add positional information"], a: 1, x: "Causal masking keeps prediction of token t independent of tokens after t." } }
+      ],
+      keys: ["Seq2seq RNN bottleneck: one fixed vector for the whole input. Attention lets the decoder look at all encoder states.", "Attention(Q,K,V) = softmax(QKᵀ/√d_k)V.", "√d_k scaling prevents softmax saturation for large dimensions.", "Multi-head: h parallel heads, concatenated, × W_O (original: h = 8, d_model = 512, d_k = 64).", "Causal mask (−∞ on future positions) in the decoder; positional encodings because attention has no notion of order."],
+      traps: ["Self-attention: Q, K, V from the same sequence. Encoder–decoder (cross) attention: Q from the decoder, K and V from the encoder.", "Attention cost is quadratic in sequence length.", "The mask is applied before the softmax, as −∞, not 0."],
+      quiz: [
+        { q: "In scaled dot-product attention, the scores QKᵀ are divided by:", o: ["d_k", "√d_k", "The sequence length", "The number of heads"], a: 1, x: "Scaling by √d_k keeps the softmax out of saturation.", r: 1 },
+        { q: "In encoder–decoder (cross) attention of the Transformer, the queries come from:", o: ["The encoder output", "The decoder", "The positional encodings", "The embedding matrix"], a: 1, x: "Q from the decoder; K and V from the encoder's output.", r: 2 },
+        { q: "A query q = [1, 0] and keys k₁ = [1, 0], k₂ = [0, 1] with d_k = 1 (no scaling effect). What is the attention weight on k₁ (3 decimals)?", a: { n: 0.731, tol: 0.002 }, x: "Scores 1 and 0 → softmax = e/(e + 1) ≈ 0.731.", r: 1 },
+        { q: "Which are advantages of self-attention over RNNs? (Select all that apply)", o: ["Parallel computation across positions", "A constant path length between any two tokens", "Linear cost in sequence length", "Direct modelling of long-range dependencies"], a: [0, 1, 3], x: "Self-attention is quadratic, not linear, in sequence length.", r: 1 },
+        { q: "With d_model = 512 and 8 heads, the per-head dimension d_k is:", a: { n: 64, tol: 0 }, x: "512 / 8 = 64.", r: 2 }
+      ]
+    },
+    {
+      id: "w9t4", title: "The Transformer encoder", lec: [57], min: 16, w: "posenc",
+      hook: "Shuffle the words of a sentence and feed them to pure self-attention. The output vectors come out identical, just shuffled. So how does a Transformer know that “dog bites man” differs from “man bites dog”?",
+      reveal: "<p>Self-attention alone is <b>order-blind</b> (permutation-equivariant). The Transformer adds a <b>positional encoding</b> to each token embedding before the first layer, so the same word at different positions has a different input vector.</p>",
+      cards: [
+        { h: "One encoder layer", b: `<div class="eq">x → [Multi-head self-attention] → Add & LayerNorm → [Position-wise feed-forward] → Add & LayerNorm</div>
+          <ul><li><b>Residual connections</b> around each sub-layer: output = LayerNorm(x + Sublayer(x)). They ease gradient flow through deep stacks.</li><li><b>Layer normalisation</b> normalises each token's feature vector (not across the batch).</li><li><b>Position-wise FFN</b>: FFN(x) = max(0, xW₁ + b₁)W₂ + b₂, applied identically to every position; inner size 2048 for d_model = 512.</li><li>The original encoder stacks N = 6 such layers.</li></ul>` },
+        { h: "Sinusoidal positional encoding", b: `<div class="eq">PE(pos, 2i) = sin(pos / 10000^(2i/d_model))        PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</div>
+          <ul><li>Added (not concatenated) to the token embeddings.</li><li>Each dimension is a sinusoid with a different wavelength (2π to 10000·2π), so every position gets a unique pattern.</li><li>PE(pos + k) is a linear function of PE(pos), which makes relative positions easy to learn, and it extrapolates to unseen lengths. Learned positional embeddings (BERT, GPT-2) are the main alternative.</li></ul>`, w: "posenc",
+          ask: { q: "PE(0, 0) and PE(0, 1) (position 0, dimensions 0 and 1) are:", o: ["0 and 1", "1 and 0", "0 and 0", "1 and 1"], a: 0, x: "sin(0) = 0, cos(0) = 1." } },
+        { h: "What the encoder produces", b: `<p>A <b>contextual embedding</b> for every input token: the vector for “bank” now depends on whether “river” or “loan” is nearby. Encoder-only models (BERT) use these for classification, tagging and question answering. Encoder–decoder models (original Transformer, T5) pass them to the decoder through cross-attention.</p>` }
+      ],
+      keys: ["Encoder layer: multi-head self-attention → Add & Norm → FFN → Add & Norm; N = 6 in the original.", "Residual connections + LayerNorm in every sub-layer.", "FFN: two linear layers with ReLU, applied per position (512 → 2048 → 512).", "PE(pos,2i) = sin(pos/10000^(2i/d)), PE(pos,2i+1) = cos(…); added to embeddings.", "Output: contextual embeddings per token."],
+      traps: ["Positional encodings are added, not concatenated.", "LayerNorm normalises across features of a token, BatchNorm across the batch.", "The encoder has no causal mask."],
+      quiz: [
+        { q: "Why are positional encodings needed in the Transformer?", o: ["To normalise activations", "Because self-attention by itself has no notion of token order", "To reduce parameters", "To implement masking"], a: 1, x: "Attention is permutation-equivariant.", r: 1 },
+        { q: "The 'Add & Norm' step computes:", o: ["x + LayerNorm(x)", "LayerNorm(x + Sublayer(x))", "BatchNorm(x)·Sublayer(x)", "Softmax(x + Sublayer(x))"], a: 1, x: "Residual connection followed by layer normalisation.", r: 0 },
+        { q: "Compute PE(pos = 1, i = 0) for the even dimension, i.e. sin(1 / 10000⁰) (3 decimals).", a: { n: 0.841, tol: 0.002 }, x: "10000⁰ = 1 → sin(1) ≈ 0.841.", r: 1 },
+        { q: "Which statements about the position-wise feed-forward network are true? (Select all that apply)", o: ["It is applied to each position separately and identically", "It contains two linear transformations with a ReLU in between", "It mixes information across positions", "Its inner dimension is 2048 in the original model"], a: [0, 1, 3], x: "Mixing across positions is the job of attention.", r: 0 },
+        { q: "How many identical layers are stacked in the original Transformer encoder?", a: { n: 6, tol: 0 }, x: "N = 6 for both the encoder and the decoder.", r: 0 }
+      ]
+    }
+  ],
+  test: [
+    { q: "Which preprocessing step reduces “running”, “ran” and “runs” to “run” using a vocabulary?", o: ["Tokenisation", "Stop-word removal", "Lemmatisation", "Padding"], a: 2, x: "Lemmatisation uses morphological analysis.", t: "w9t1", r: 0 },
+    { q: "CBOW in Word2Vec:", o: ["Predicts context words from the centre word", "Predicts the centre word from its context", "Factorises a co-occurrence matrix", "Uses character n-grams"], a: 1, x: "Continuous Bag of Words: context → word.", t: "w9t1", r: 2 },
+    { q: "A vanilla RNN repeatedly multiplies gradients by about 0.5 per step. After 10 steps, the gradient is scaled by approximately:", a: { n: 0.000977, tol: 0.00002 }, x: "0.5¹⁰ = 1/1024 ≈ 0.000977: vanishing.", t: "w9t2", r: 1 },
+    { q: "In an LSTM, h_t = o_t ⊙ tanh(c_t). With o_t = 0.5 and c_t = 1, h_t ≈ (3 decimals):", a: { n: 0.381, tol: 0.002 }, x: "tanh(1) ≈ 0.7616 → 0.5 × 0.7616 ≈ 0.381.", t: "w9t2", r: 2 },
+    { q: "The GRU differs from the LSTM in that it:", o: ["Has no gates", "Uses update and reset gates and no separate cell state", "Uses attention", "Cannot be trained with BPTT"], a: 1, x: "A GRU is a simplified LSTM.", t: "w9t2", r: 2 },
+    { q: "Which formula is scaled dot-product attention?", o: ["softmax(QK)V", "softmax(QKᵀ/√d_k)V", "σ(QKᵀ)V", "softmax(VKᵀ)Q"], a: 1, x: "The core Transformer equation.", t: "w9t3", r: 1 },
+    { q: "Masked self-attention is used in:", o: ["The encoder", "The decoder", "The positional encoding", "The feed-forward layer"], a: 1, x: "It keeps generation autoregressive.", t: "w9t3", r: 2 },
+    { q: "Which problems of RNN encoder–decoders motivated attention and Transformers? (Select all that apply)", o: ["The fixed-length context bottleneck", "Sequential computation that cannot be parallelised over time", "Difficulty with long-range dependencies", "Inability to use word embeddings"], a: [0, 1, 2], x: "RNNs use word embeddings routinely.", t: "w9t3", r: 0 },
+    { q: "In the Transformer, positional encodings are:", o: ["Concatenated to the output of the last layer", "Added to the input token embeddings", "Multiplied with attention weights", "Used only in the decoder"], a: 1, x: "Added before the first layer, in both the encoder and the decoder.", t: "w9t4", r: 1 },
+    { q: "Layer normalisation in the Transformer normalises:", o: ["Across the batch for each feature", "Across the features of each token", "Across attention heads only", "Across time steps"], a: 1, x: "Per token, across its feature dimension.", t: "w9t4", r: 0 }
+  ]
+});
