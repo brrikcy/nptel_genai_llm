@@ -1,5 +1,5 @@
-/* Final mock-exam pool: 150 questions that appear nowhere else in the course.
-   They are dealt round-robin into three 50-question mocks, balanced across all 12 weeks. */
+/* Final mock-exam pool: 164 questions that appear nowhere else in the course.
+   They are dealt round-robin into three mocks of 54–55 questions, balanced across all 12 weeks. */
 COURSE.finals.push(
   /* ---------- Week 1 ---------- */
   { t: "w1t1", q: "Which pair correctly matches model type with what it learns?", o: ["Discriminative – p(x); Generative – p(y|x)", "Discriminative – p(y|x); Generative – p(x) or p(x,y)", "Both learn p(y|x)", "Both learn only decision boundaries"], a: 1, x: "Discriminative models learn the conditional; generative models learn the data distribution." },
@@ -175,5 +175,17 @@ COURSE.finals.push(
   { t: "w12t4", q: "ROUGE-L for reference 'the cat sat' and prediction 'the cat sat' is:", a: { n: 1, tol: 0 }, x: "Identical sequences → LCS = full length." },
   { t: "w12t4", q: "Asked a question whose answer is absent from the provided context, the most desirable behaviour of a grounded model is:", o: ["Guess the most plausible answer", "Abstain: say the answer is not in the context", "Repeat the question", "Increase the temperature"], a: 1, x: "Abstention prevents hallucination." },
   { t: "w12t5", q: "Swapping 'he' for 'she' in otherwise identical prompts and comparing outputs is a:", o: ["Counterfactual fairness test", "Exact-match test", "Benchmark contamination check", "Tokenisation test"], a: 0, x: "Checks whether a protected attribute changes the output." },
-  { t: "w12t5", q: "Which actions should require human approval under a cautious agent policy? (Select all that apply)", o: ["Sending an email on the user's behalf", "Writing or overwriting a file", "Reading public documentation", "Deleting a shared folder"], a: [0, 1, 3], x: "Actions with side effects need review; reading public documentation is low-risk. (Very high-risk actions such as transferring money are denied outright in the tutorial's policy.)" }
+  { t: "w12t5", q: "Which actions should require human approval under a cautious agent policy? (Select all that apply)", o: ["Sending an email on the user's behalf", "Writing or overwriting a file", "Reading public documentation", "Deleting a shared folder"], a: [0, 1, 3], x: "Actions with side effects need review; reading public documentation is low-risk. (Very high-risk actions such as transferring money are denied outright in the tutorial's policy.)" },
+  { t: "w1t3", q: "Course momentum (EWMA): β = 0.9, previous velocity 2.0, current gradient −1.0, learning rate 0.1, current weight 5. What is the new weight?", a: { n: 4.83, tol: 0.005 }, x: "v = 0.9 × 2.0 + 0.1 × (−1.0) = 1.7; w = 5 − 0.1 × 1.7 = 4.83." },
+  { t: "w2t2", q: "A transposed convolution with input 4×4, kernel 4, stride 2 and padding 1 produces an output of size n × n. What is n?", a: { n: 8, tol: 0 }, x: "(n − 1)·s − 2p + f = 3 × 2 − 2 + 4 = 8: the usual ×2 upsampling layer." },
+  { t: "w3t1", q: "A source emits A, B, C with probabilities 0.5, 0.25, 0.25. Its entropy in bits is:", a: { n: 1.5, tol: 0.001 }, x: "0.5 × 1 + 0.25 × 2 + 0.25 × 2 = 1.5 bits." },
+  { t: "w4t1", q: "A VAE latent has σ = 1 in every dimension and μ = [1.0, 2.0]. Its KL cost ½Σ(μ² + σ² − log σ² − 1) is:", a: { n: 2.5, tol: 0.001 }, x: "With σ = 1 the KL is ½Σμ² = ½(1 + 4) = 2.5." },
+  { t: "w5t1", q: "The generator's loss is L_G = −ln D(G(z)). If the discriminator outputs D(G(z)) = 0.5, L_G equals (3 decimals):", a: { n: 0.693, tol: 0.002 }, x: "−ln 0.5 = 0.693, lower than −ln 0.2 = 1.609: the fake is now harder to spot." },
+  { t: "w6t4", q: "AdaIN on feature values x = [1, 3] (population standard deviation) with style scale y_s = 3 and bias y_b = 0.5 gives:", o: ["[−2.5, 3.5]", "[3.5, 9.5]", "[−1, 1]", "[0.5, 0.5]"], a: 0, x: "μ = 2, σ = 1 → x̂ = [−1, 1] → 3·x̂ + 0.5 = [−2.5, 3.5]." },
+  { t: "w7t4", q: "ᾱ_(t−1) = 0.9 and β_t = 0.1. Compute the posterior variance β̃_t = (1 − ᾱ_(t−1))/(1 − ᾱ_t) · β_t (4 decimals).", a: { n: 0.0526, tol: 0.0005 }, x: "α_t = 0.9, so ᾱ_t = 0.9 × 0.9 = 0.81. β̃ = (0.1/0.19) × 0.1 ≈ 0.0526." },
+  { t: "w8t2", q: "Course CFG form ε̂ = (1 + s)·ε_cond − s·ε_uncond, with ε_cond = 0.4, ε_uncond = 0.1 and s = 3. Compute ε̂.", a: { n: 1.3, tol: 0.001 }, x: "4 × 0.4 − 3 × 0.1 = 1.6 − 0.3 = 1.3." },
+  { t: "w9t3", q: "A query has (already scaled) scores [2, 0] against two keys whose scalar values are 10 and 0. What is the attention output (2 decimals)?", a: { n: 8.81, tol: 0.02 }, x: "softmax([2, 0]) = [0.881, 0.119]; output = 0.881 × 10 + 0.119 × 0 = 8.81." },
+  { t: "w10t1", q: "The big Transformer uses d_model = 1024 with 16 heads. What is the per-head dimension d_k?", a: { n: 64, tol: 0 }, x: "d = h × d_k → 1024 / 16 = 64 (the base model: 512 / 8 = 64)." },
+  { t: "w11t2", q: "Course LoRA notation: W₀ ∈ ℝ^(2048×256), r = 4. What fraction of the full matrix's parameters does LoRA train? (4 decimals)", a: { n: 0.0176, tol: 0.0005 }, x: "r(D + d)/(D·d) = 4 × 2304 / 524,288 ≈ 0.0176 (under 2%)." },
+  { t: "w12t1", q: "Tokens in index order a, b, c have probabilities 0.2, 0.5, 0.3. Using the lecture's cumulative method with U = 0.65, which token is sampled?", o: ["a", "b", "c", "None"], a: 1, x: "Bins: a 0–0.2, b 0.2–0.7, c 0.7–1.0. 0.65 falls in b." }
 );

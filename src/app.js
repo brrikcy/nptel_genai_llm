@@ -292,7 +292,7 @@
             <h1>Fundamentals of Generative AI &amp; Large Language Models</h1>
             <p>Every lecture in the playlist, in teaching order, condensed into ${flat.length} short topics. Each topic opens with a puzzle, teaches the idea with interactive models, and ends with a quiz that tells you exactly what to fix. Every week ends with a section test, and three full mock exams wait at the finish line.</p>
             <div class="callout acc"><span class="eyebrow">Up next</span><div style="font:600 1.08rem var(--f-display);margin-top:4px">${nxLabel}</div>
-              ${nx ? `<div class="small muted">${nx.kind === "topic" ? `Week ${nx.wk} · planned ${nx.min} min` : nx.kind === "test" ? `10 questions · pass mark 70%` : "30 min"}</div>` : ""}</div>
+              ${nx ? `<div class="small muted">${nx.kind === "topic" ? `Week ${nx.wk} · planned ${nx.min} min` : nx.kind === "test" ? `${weekById[nx.id].test.length} questions · pass mark 70%` : "30 min"}</div>` : ""}</div>
             <div class="row">${nx ? `<button class="btn" id="go-next">${nx.kind === "test" ? "Start section test" : nx.kind === "rev" ? "Open formula sheet" : "Start topic"}</button>` : `<button class="btn" data-nav="mocks">Go to mock exams</button>`}${lastBtn}</div>
           </div>
           <div class="card hourglass">
@@ -398,7 +398,7 @@
               <div class="row">${st.best != null ? `<span class="chip ${st.passed ? "good" : "bad"}">quiz ${pct(st.best)}%</span>` : ""}<button class="btn ${isDone(t.id) ? "quiet" : ""} small" data-topic="${t.id}">${isDone(t.id) ? "Review" : st.read ? "Continue" : "Start"}</button></div>
             </div></div>`; }).join("")}
           <div class="lcard" style="border-color:var(--accent)"><div class="row" style="justify-content:space-between">
-            <div style="flex:1;min-width:0"><span class="eyebrow">Section test · 10 questions · pass 70%</span><h3 style="margin-top:4px">Week ${w.n} section test</h3>
+            <div style="flex:1;min-width:0"><span class="eyebrow">Section test · ${w.test.length} questions · pass 70%</span><h3 style="margin-top:4px">Week ${w.n} section test</h3>
             <p class="small muted" style="margin-top:4px">${allDone ? "All topics mastered. Test yourself under exam conditions." : "Recommended after all topic quizzes are passed. You can still attempt it now."}</p></div>
             <div class="row">${ts.best != null ? `<span class="chip ${ts.passed ? "good" : "bad"}">best ${pct(ts.best)}%</span>` : ""}<button class="btn small" data-test="${w.id}">${ts.attempts ? "Retake test" : "Start test"}</button></div>
           </div></div>

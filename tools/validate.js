@@ -48,7 +48,7 @@ C.weeks.forEach((w) => {
     t.quiz.forEach((q, i) => { checkQ(q, `${t.id} quiz ${i + 1}`, t); tally(q); });
   });
   (w.test || []).forEach((q, i) => { checkQ(q, `${w.id} test ${i + 1}`); tally(q); if (q.t && !q.t.startsWith(w.id + "t")) err(`${w.id} test ${i + 1}: topic ${q.t} is from another week`); });
-  if ((w.test || []).length !== 10) err(`${w.id}: section test has ${(w.test || []).length} questions`);
+  if ((w.test || []).length < 10) err(`${w.id}: section test has ${(w.test || []).length} questions`);
 });
 C.finals.forEach((q, i) => { checkQ(q, `final ${i + 1}`); tally(q); });
 

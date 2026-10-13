@@ -51,18 +51,21 @@
   /* 1. Activation functions */
   W.activation = (el) => {
     const b = U.box(el, "Activation function explorer", "Pick a function, move x, and watch the value and the gradient. Notice where the gradient dies.");
-    b.insertAdjacentHTML("beforeend", `${U.seg("f", [["sigmoid", "Sigmoid"], ["tanh", "Tanh"], ["relu", "ReLU"], ["leaky", "Leaky ReLU"], ["linear", "Linear"]], "sigmoid")}
+    b.insertAdjacentHTML("beforeend", `${U.seg("f", [["sigmoid", "Sigmoid"], ["tanh", "Tanh"], ["relu", "ReLU"], ["leaky", "Leaky ReLU"], ["elu", "ELU"], ["gelu", "GELU"], ["silu", "SiLU"], ["linear", "Linear"]], "sigmoid")}
       <div class="ctrls">${U.range("x", "Input x", -6, 6, 0.1, 2)}</div><div class="plot"></div><div class="readout"></div>`);
     const F = {
       sigmoid: [(x) => 1 / (1 + Math.exp(-x)), (x) => { const s = 1 / (1 + Math.exp(-x)); return s * (1 - s); }, "σ(x) = 1/(1+e^(−x)) · range (0,1) · max gradient 0.25 at x=0", "Output layer for binary classification (with BCE). Saturates for |x| > 4 → vanishing gradient."],
       tanh: [Math.tanh, (x) => 1 - Math.tanh(x) ** 2, "tanh(x) · range (−1,1) · zero-centred · max gradient 1", "Zero-centred, still saturates. Used inside RNN/LSTM cells."],
       relu: [(x) => Math.max(0, x), (x) => (x > 0 ? 1 : 0), "ReLU(x) = max(0, x) · gradient 1 for x>0, 0 for x<0", "Default for hidden layers: cheap, no saturation for x>0. Risk: dead neurons for x<0."],
-      leaky: [(x) => (x > 0 ? x : 0.1 * x), (x) => (x > 0 ? 1 : 0.1), "LeakyReLU(x) = x if x>0 else αx (α=0.1 here)", "Keeps a small gradient for x<0, fixing dying ReLU."],
+      leaky: [(x) => (x > 0 ? x : 0.01 * x), (x) => (x > 0 ? 1 : 0.01), "LeakyReLU(x) = max(0.01x, x)", "Keeps a small gradient for x<0, fixing dying ReLU. Used in CNNs, AEs, VAEs, GAN discriminators."],
+      elu: [(x) => (x > 0 ? x : Math.exp(x) - 1), (x) => (x > 0 ? 1 : Math.exp(x)), "ELU(x) = x if x>0 else α(eˣ − 1), α = 1", "Smooth negative side, saturates at −α. ELU(−1) = −0.6321."],
+      gelu: [(x) => 0.5 * x * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * x ** 3))), (x) => { const h = 1e-4, g = (v) => 0.5 * v * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (v + 0.044715 * v ** 3))); return (g(x + h) - g(x - h)) / (2 * h); }, "GELU(x) = x·Φ(x) ≈ 0.5x(1 + tanh(√(2/π)(x + 0.044715x³)))", "The activation of Transformers and LLMs. GELU(1) = 0.8413, GELU(−1) = −0.1587."],
+      silu: [(x) => x / (1 + Math.exp(-x)), (x) => { const s = 1 / (1 + Math.exp(-x)); return s + x * s * (1 - s); }, "SiLU(x) = Swish(x) = x·σ(x)", "Smooth and non-monotonic. Used in diffusion-model U-Nets."],
       linear: [(x) => x, () => 1, "f(x) = x", "Output layer for regression / continuous reconstruction (with MSE)."]
     };
     const draw = (s) => {
       const [f, df, eq, use] = F[s.f];
-      const p = U.plot({ x0: -6, x1: 6, y0: -1.5, y1: 1.5 * (s.f === "relu" || s.f === "leaky" || s.f === "linear" ? 4 : 1) });
+      const p = U.plot({ x0: -6, x1: 6, y0: -1.5, y1: 1.5 * (["relu", "leaky", "linear", "elu", "gelu", "silu"].includes(s.f) ? 4 : 1) });
       const y1 = p.y1; const yt = y1 > 2 ? [-1, 0, 2, 4, 6] : [-1, 0, 1];
       b.querySelector(".plot").innerHTML = p.svg(p.frame([-6, -3, 0, 3, 6], yt) + p.line(p.path(f), C1) + p.line(p.path(df), C2, 'stroke-dasharray="6 4"') +
         `<circle cx="${p.X(s.x)}" cy="${p.Y(f(s.x))}" r="6" fill="${C1}"/><circle cx="${p.X(s.x)}" cy="${p.Y(df(s.x))}" r="5" fill="${C2}"/>`) +
@@ -82,7 +85,7 @@
       for (let i = 0; i < n; i++) {
         const [gx, gy] = g(x, y); t++;
         if (kind === "gd") { x -= lr * gx; y -= lr * gy; }
-        else if (kind === "mom") { vx = 0.9 * vx + lr * gx; vy = 0.9 * vy + lr * gy; x -= vx; y -= vy; }
+        else if (kind === "mom") { vx = 0.9 * vx + 0.1 * gx; vy = 0.9 * vy + 0.1 * gy; x -= lr * vx; y -= lr * vy; }
         else if (kind === "rms") { sx = 0.9 * sx + 0.1 * gx * gx; sy = 0.9 * sy + 0.1 * gy * gy; x -= (lr * gx) / (Math.sqrt(sx) + 1e-8); y -= (lr * gy) / (Math.sqrt(sy) + 1e-8); }
         else { mx = 0.9 * mx + 0.1 * gx; my = 0.9 * my + 0.1 * gy; sx = 0.999 * sx + 0.001 * gx * gx; sy = 0.999 * sy + 0.001 * gy * gy; const mhx = mx / (1 - 0.9 ** t), mhy = my / (1 - 0.9 ** t), shx = sx / (1 - 0.999 ** t), shy = sy / (1 - 0.999 ** t); x -= (lr * 2 * mhx) / (Math.sqrt(shx) + 1e-8); y -= (lr * 2 * mhy) / (Math.sqrt(shy) + 1e-8); }
         if (!isFinite(x) || Math.abs(x) > 50 || Math.abs(y) > 50) { pts.push([Math.sign(x) * 50, Math.sign(y) * 50]); break; }
@@ -94,7 +97,7 @@
       const p = U.plot({ x0: -5, x1: 5, y0: -2, y1: 2, h: 260 });
       let g = p.frame([-4, -2, 0, 2, 4], [-2, -1, 0, 1, 2]);
       [0.5, 2, 5, 10, 16].forEach((lv) => { const a = Math.sqrt(2 * lv), c = Math.sqrt(lv / 5); g += `<ellipse cx="${p.X(0)}" cy="${p.Y(0)}" rx="${p.X(a) - p.X(0)}" ry="${p.Y(0) - p.Y(c)}" fill="none" stroke="var(--rule)" stroke-width="1.2" clip-path="url(#${p.cid})"/>`; });
-      const kinds = [["gd", "SGD", C4], ["mom", "Momentum (β=0.9)", C2], ["rms", "RMSProp", C3], ["adam", "Adam", C1]];
+      const kinds = [["gd", "SGD", C4], ["mom", "Momentum (EWMA, β=0.9)", C2], ["rms", "RMSProp", C3], ["adam", "Adam", C1]];
       let out = [];
       kinds.forEach(([k, name, col]) => { const pts = run(k, s.lr, s.steps); g += `<polyline points="${pts.map(([x, y]) => p.X(x).toFixed(1) + "," + p.Y(y).toFixed(1)).join(" ")}" fill="none" stroke="${col}" stroke-width="2" clip-path="url(#${p.cid})"/>`; const [x, y] = pts[pts.length - 1]; g += `<circle cx="${p.X(Math.max(-5, Math.min(5, x)))}" cy="${p.Y(Math.max(-2, Math.min(2, y)))}" r="4" fill="${col}"/>`; out.push(`${name}: loss <b>${Math.abs(x) >= 50 ? "diverged" : U.f(f(x, y), 4)}</b>`); });
       g += `<circle cx="${p.X(0)}" cy="${p.Y(0)}" r="4" fill="var(--ink)"/>`;
@@ -298,12 +301,12 @@
 
   /* 12. VAE loss calculator */
   W.vaeloss = (el) => {
-    const b = U.box(el, "VAE loss calculator", "Enter the encoder outputs and a reconstruction. This mirrors the lecture's worked example: total loss = reconstruction (MSE) + KL to N(0, I).");
+    const b = U.box(el, "VAE loss calculator", "Enter the encoder outputs and a reconstruction. The defaults are Lecture 24's worked example (9.711 + 0.352 = 10.063): total loss = reconstruction (MSE) + KL to N(0, I).");
     b.insertAdjacentHTML("beforeend", `<div class="ctrls">
-      <div class="ctrl"><label>μ (comma-separated)</label><input type="text" data-k="mu" value="0.043, -0.66"></div>
+      <div class="ctrl"><label>μ (comma-separated)</label><input type="text" data-k="mu" value="0.043, 0.551"></div>
       <div class="ctrl"><label>log σ² (comma-separated)</label><input type="text" data-k="lv" value="0.732, 0.302"></div>
       <div class="ctrl"><label>Input x</label><input type="text" data-k="x" value="5.1, 3.5, 1.4, 0.2"></div>
-      <div class="ctrl"><label>Reconstruction x̂</label><input type="text" data-k="xh" value="0.103, 0.257, 0.12, 0.31"></div></div><div class="readout"></div>`);
+      <div class="ctrl"><label>Reconstruction x̂</label><input type="text" data-k="xh" value="0.103, -0.028, 0.206, 0.243"></div></div><div class="readout"></div>`);
     const nums = (s) => String(s).split(/[,\s]+/).filter(Boolean).map(Number);
     const draw = (s) => {
       const mu = nums(s.mu), lv = nums(s.lv), x = nums(s.x), xh = nums(s.xh);
