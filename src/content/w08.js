@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`This week opens up the denoising network itself (a U-Net that is told the time step), adds control (classifier guidance, then classifier-free guidance), and makes diffusion fast enough for everyday use by running it on compressed images (Stable Diffusion). Lectures 49–53.`,
   topics: [
     {
-      id: "w8t1", title: "The U-Net denoiser", lec: [49], min: 15,
+      id: "w8t1", title: "The U-Net denoiser", lec: [49], min: 13,
       hook: R`The denoiser's output must be exactly the same size as its input, must keep fine detail, and must also understand the whole picture. One design, first built for outlining cells under a microscope, fits perfectly. Which one, and why?`,
       reveal: R`<p>The <b>U-Net</b> (Week 6): an encoder that shrinks the image to see the big picture, a decoder that grows it back, and <b>skip connections</b> that pass fine detail straight across. Same size in and out, global and local information at once.</p>`,
       cards: [
@@ -69,7 +69,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w8t3", title: "Stable Diffusion: diffusion in latent space", lec: [52, 53], min: 16,
+      id: "w8t3", title: "Stable Diffusion: diffusion in latent space", lec: [52, 53], min: 14,
       hook: R`Running 1,000 diffusion steps directly on $512 \times 512 \times 3$ images means pushing about 786,000 numbers through a big U-Net a thousand times. What if you first squeezed every image 48 times smaller, and did the diffusion there?`,
       reveal: R`<p>That is <b>latent diffusion</b>. A pre-trained autoencoder squeezes $512 \times 512 \times 3$ into a $64 \times 64 \times 4$ latent (8 times smaller on each side). Noising and denoising happen in that small space, and the decoder turns the final latent back into pixels. Far cheaper, almost no loss in quality, and the basis of Stable Diffusion.</p>`,
       cards: [
@@ -88,7 +88,7 @@ COURSE.weeks.push({
         { h: "What latent diffusion can do, and the hands-on", b: R`<ul><li>Much less computing and memory (about 48 times fewer numbers per image), so high resolution runs on ordinary gaming GPUs.</li><li>The same model supports text-to-image, image-to-image (start from a noised version of an input image's latent), inpainting (fill a masked hole) and super-resolution.</li><li>Hands-on reverse diffusion: load the trained model, start from noise, loop $t = T, \ldots, 1$ with the update $\mu_\theta + \sigma_t z$, and watch the image appear from noise.</li></ul>` }
       ],
       keys: [R`Latent diffusion: diffuse in the latent space of a pre-trained, frozen VAE ($512 \times 512 \times 3 \to 64 \times 64 \times 4$, $f = 8$, 48 times fewer numbers).`, "Stable Diffusion = VAE + U-Net denoiser + CLIP text encoder; CFG when generating.", R`Cross-attention: $Q$ from image latents; $K$, $V$ from text embeddings.`, "Spatial conditions are concatenated; text enters by cross-attention.", R`Generating: $z_T \sim \mathcal{N}(0, I)$ → denoise → VAE decoder → image.`],
-      traps: ["The VAE runs only at the start (training) and the end (decoding); denoising happens in the latent space.", "The text encoder is frozen; it is not trained with the U-Net in SD v1.", "Self-attention mixes image locations; cross-attention brings in the text."],
+      traps: ["The VAE runs only at the start (training) and the end (decoding); denoising happens in the latent space.", "The text encoder is frozen; it is not trained with the U-Net in Stable Diffusion (SD) v1.", "Self-attention mixes image locations; cross-attention brings in the text."],
       quiz: [
         { q: "In Stable Diffusion, the diffusion process runs on:", o: ["Raw pixels", "The latent space of a pre-trained autoencoder", "The text embedding", "Class labels"], a: 1, x: "Latent diffusion is the defining idea.", r: 0 },
         { q: R`A $512 \times 512 \times 3$ image is encoded into a $64 \times 64 \times 4$ latent. By what factor is the number of values reduced?`, a: { n: 48, tol: 0.1 }, x: R`$\frac{786{,}432}{16{,}384} = 48$.`, r: 0 },

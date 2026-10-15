@@ -30,3 +30,35 @@ COURSE.glossary.push(
   ["bias", R`Two meanings. In a neuron: a number added after the weighted sum so the output can shift up or down. In ethics (Week 12): an unfair skew in data or answers, such as favouring one group.`, ["biases"]],
   ["neuron", R`The basic unit of a neural network: it computes $z = \mathbf{w}\cdot\mathbf{x} + b$ and then applies an activation function.`, ["neurons"]]
 );
+
+/* Abbreviations a newcomer meets in the lectures (found by tools/student-audit.js). */
+COURSE.glossary.push(
+  ["SVM", R`Support vector machine: a classic classifier that draws the widest possible gap between two classes. It only separates classes, so it is discriminative, not generative.`, ["SVMs", "support vector machine"]],
+  ["CE", R`Short for cross-entropy loss: $-\log(\text{probability given to the right answer})$.`],
+  ["ELU", R`Exponential linear unit: like ReLU for positive inputs, but bends smoothly to a small negative value, $\alpha(e^z - 1)$, for negative inputs.`],
+  ["GELU", R`Gaussian error linear unit, $z \cdot \Phi(z)$: a smooth cousin of ReLU used inside Transformers.`],
+  ["MAE", R`Mean absolute error: the average size of the mistakes, $\frac{1}{n}\sum |y - \hat{y}|$. It punishes big errors less than MSE does.`, ["mean absolute error"]],
+  ["RGB", R`Red, green, blue: the three colour channels of a colour image. A $32 \times 32$ colour image is $32 \times 32 \times 3$ numbers.`],
+  ["VGG", R`A famous 2014 image-recognition CNN from Oxford's Visual Geometry Group, built from many small $3 \times 3$ convolutions stacked deep.`, ["VGG16", "VGG-16"]],
+  ["MLP", R`Multilayer perceptron: a plain stack of fully connected (dense) layers with activations in between.`, ["multilayer perceptron"]],
+  ["ELMo", R`A 2018 model that gave each word a different vector depending on its sentence, using two-way LSTMs. It came just before BERT.`],
+  ["T5", R`Google's “Text-to-Text Transfer Transformer”: an encoder–decoder that treats every task as text in, text out.`],
+  ["QA", R`Question answering: a task where the model must answer a question, often from a given passage.`, ["question answering"]],
+  ["JSON", R`A simple text format for structured data, like {"name": "Asha", "class": 10}. Asking an LLM for JSON makes its answer easy for a program to read.`],
+  ["SFT", R`Supervised fine-tuning: further training a pre-trained model on example prompts paired with good answers written by people.`, ["supervised fine-tuning"]],
+  ["PPO", R`Proximal policy optimisation: the reinforcement-learning method used in RLHF to nudge the model towards answers the reward model scores highly, in small safe steps.`],
+  ["DPO", R`Direct preference optimisation: aligns a model straight from pairs of “better” and “worse” answers, without training a separate reward model.`],
+  ["FAISS", R`A free library (from Meta) for very fast “find the nearest vectors” search, often used as the vector index in RAG.`],
+  ["BART", R`An encoder–decoder Transformer trained to repair damaged text. It was the answer-writing part of the original RAG model.`],
+  ["SQL", R`The standard language for asking questions of database tables, e.g. SELECT name FROM students WHERE marks > 90.`],
+  ["BLEU", R`A translation score: how many short word sequences in the output also appear in the reference translation (a precision-style measure).`],
+  ["ROUGE", R`A family of summary scores that count overlap with a reference text (recall-style). ROUGE-L uses the longest common subsequence.`],
+  ["TPR", R`True-positive rate: of the people who truly qualify, the share the model accepts. Equal opportunity asks for equal TPR in every group.`, ["true-positive rate", "true positive rate"]],
+  ["FPR", R`False-positive rate: of the people who do not qualify, the share the model wrongly accepts.`, ["false-positive rate", "false positive rate"]],
+  ["WMT", R`The yearly Workshop on Machine Translation and its datasets, such as WMT 2014 English–German, used to train and test the original Transformer.`],
+  ["ALBERT", R`“A Lite BERT”: shares weights across layers so the model is far smaller than BERT with similar accuracy.`],
+  ["MBPP", R`“Mostly Basic Python Problems”: a coding benchmark of short Python tasks checked by unit tests (like HumanEval).`],
+  ["MMMU", R`A multimodal benchmark of college-level exam questions that mix text with pictures, charts and diagrams.`],
+  ["NQ", R`Natural Questions: real Google search questions whose answers are found in Wikipedia pages. Used to test open-domain QA and RAG.`, ["Natural Questions"]],
+  ["CV", R`In Week 12, a curriculum vitae (résumé): the document a job applicant sends. Screening CVs is an example of a high-stakes decision.`]
+);

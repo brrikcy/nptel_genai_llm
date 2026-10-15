@@ -293,6 +293,7 @@
             <span class="eyebrow">NPTEL · IISc Bangalore · 12-week course in 16 hours</span>
             <h1>Fundamentals of Generative AI &amp; Large Language Models</h1>
             <p>Every lecture in the playlist, in teaching order, condensed into ${flat.length} short topics. Each topic opens with a puzzle, teaches the idea with interactive models, and ends with a quiz that tells you exactly what to fix. Every week ends with a section test, and three full mock exams wait at the finish line.</p>
+            <p class="small muted">New to the maths? Start with <b>Week 0</b>, a short toolkit written for Class 10 students. Any <span class="term" style="pointer-events:none">underlined word</span> opens a plain-language definition.</p>
             <div class="callout acc"><span class="eyebrow">Up next</span><div style="font:600 1.08rem var(--f-display);margin-top:4px">${nxLabel}</div>
               ${nx ? `<div class="small muted">${nx.kind === "topic" ? `Week ${nx.wk} · planned ${nx.min} min` : nx.kind === "test" ? `${weekById[nx.id].test.length} questions · pass mark 70%` : "30 min"}</div>` : ""}</div>
             <div class="row">${nx ? `<button class="btn" id="go-next">${nx.kind === "test" ? "Start section test" : nx.kind === "rev" ? "Open formula sheet" : "Start topic"}</button>` : `<button class="btn" data-nav="mocks">Go to mock exams</button>`}${lastBtn}</div>

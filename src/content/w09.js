@@ -38,7 +38,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w9t2", title: "RNNs and LSTMs", lec: [55, 58], min: 18,
+      id: "w9t2", title: "RNNs and LSTMs", lec: [55, 58], min: 17,
       hook: R`“The cat, which already ate a lot of the fish that the neighbours brought over last week, ___ full.” Was or were? You must remember a word from 15 words back. How could a network carry that memory along?`,
       reveal: R`<p>A <b>recurrent</b> network keeps a hidden state $h_t$ that it updates word by word: a running summary. Plain RNNs forget long-range information because gradients fade over many steps. The <b>LSTM</b> adds a gated “cell state” that can carry “cat → singular” across long gaps.</p>`,
       cards: [
@@ -108,7 +108,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w9t4", title: "The Transformer encoder", lec: [57], min: 15,
+      id: "w9t4", title: "The Transformer encoder", lec: [57], min: 12,
       hook: R`Shuffle the words of a sentence and feed them to pure self-attention. The outputs come out the same, just shuffled. So how does a Transformer know that “dog bites man” differs from “man bites dog”?`,
       reveal: R`<p>Self-attention alone is <b>order-blind</b>. The Transformer adds a <b>positional encoding</b> to each word's embedding before the first layer, so the same word at different positions gets a different input vector.</p>`,
       cards: [
@@ -119,7 +119,7 @@ COURSE.weeks.push({
           <ul><li>$pos$ is the word's position; even entries use sine, odd entries use cosine, each at a different speed.</li><li>The encoding is <b>added</b> to the word embedding (not joined on).</li><li>Every position gets a unique pattern, values stay between $-1$ and $1$, and the pattern for position $pos + k$ is a simple (linear) function of the pattern for $pos$, so relative distances are easy to learn. It also works for lengths never seen in training.</li><li>Alternative: <b>learned</b> position embeddings (BERT, GPT-2).</li></ul>
           <div class="steps"><ol><li>Position 0: $\text{PE}(0, 0) = \sin 0 = 0$, $\text{PE}(0, 1) = \cos 0 = 1$.</li><li>Position 1, $i = 0$: $\sin\!\left(\frac{1}{10000^0}\right) = \sin 1 \approx 0.841$.</li></ol></div>`, w: "posenc",
           ask: { q: R`$\text{PE}(0, 0)$ and $\text{PE}(0, 1)$ (position 0, entries 0 and 1) are:`, o: ["0 and 1", "1 and 0", "0 and 0", "1 and 1"], a: 0, x: R`$\sin 0 = 0$, $\cos 0 = 1$.` } },
-        { h: "What the encoder produces", b: R`<p>A <b>contextual embedding</b> for every input word: the vector for “bank” now depends on whether “river” or “loan” is nearby. Encoder-only models (BERT, Week 10) use these for classification, tagging and question answering. Encoder–decoder models (the original Transformer, T5) pass them to the decoder through cross-attention.</p>` }
+        { h: "What the encoder produces", b: R`<p>The encoder gives one vector for every input word. Each vector now carries its context, so we call it a <b>contextual embedding</b>. For example, “bank” gets a different vector next to “river” than next to “loan”.</p><ul><li><b>Encoder-only</b> models (BERT, Week 10) use these vectors to sort texts, tag words and answer questions.</li><li><b>Encoder–decoder</b> models (the original Transformer, T5) hand them to the decoder through cross-attention.</li></ul>` }
       ],
       keys: ["Encoder layer: multi-head self-attention → Add & Norm → FFN → Add & Norm; 6 layers, same design, separate weights.", R`Add & Norm: $\text{LayerNorm}(x + \text{Sublayer}(x))$.`, R`FFN: two linear layers with ReLU, applied to each word separately ($512 \to 2048 \to 512$).`, R`$\text{PE}(pos,2i) = \sin\frac{pos}{10000^{2i/d}}$, $\text{PE}(pos,2i+1) = \cos\frac{pos}{10000^{2i/d}}$; added to embeddings.`, "Output: contextual embeddings, one per word."],
       traps: ["Positional encodings are added, not concatenated.", "LayerNorm works across one word's features; BatchNorm works across the batch.", "The encoder has no causal mask."],

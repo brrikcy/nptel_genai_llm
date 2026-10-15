@@ -396,3 +396,5 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 .gloss { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .gitem { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
 .gitem[hidden] { display: none; }
+.examfocus { margin-top: 10px; border: 1px solid var(--rule); border-left: 3px solid var(--good); border-radius: 8px; padding: 10px 14px; background: var(--good-soft); }
+.examfocus::before { content: "What the exam asks"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--good); margin-bottom: 2px; }

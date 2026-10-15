@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`A plain GAN makes random pictures. This week adds control: tell it the class you want (cGAN), turn one kind of picture into another using matching pairs (Pix2Pix), do it without pairs (CycleGAN), and control style at every level of detail (StyleGAN, StyleGAN2). Lectures 38–43.`,
   topics: [
     {
-      id: "w6t1", title: "Conditional GAN: steer the generator", lec: [38], min: 12,
+      id: "w6t1", title: "Conditional GAN: steer the generator", lec: [38], min: 10,
       hook: R`Your GAN draws convincing digits, but the discriminator only checks “real or fake?”. If you also hand both networks the label “3”, what new kind of cheat can the discriminator now catch?`,
       reveal: R`<p>A perfectly realistic <b>7</b> passed off as a 3. With the label, D judges “real <i>and</i> matching the label”, so G is forced to draw images that agree with the condition. That is the <b>conditional GAN</b> (cGAN).</p>`,
       cards: [
@@ -31,7 +31,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w6t2", title: "Pix2Pix: paired image-to-image translation", lec: [39], min: 14,
+      id: "w6t2", title: "Pix2Pix: paired image-to-image translation", lec: [39], min: 12,
       hook: R`You have 1,000 pairs of (building outline, photo of that building). You want to turn new outlines into photos. A plain L1 loss gives blurry photos; a plain GAN gives sharp photos of the wrong building. What if you use both?`,
       reveal: R`<p>You get <b>Pix2Pix</b>: the L1 loss keeps the output faithful to the target (the overall layout and colours), and the adversarial loss makes it sharp and realistic (fine detail). Add a <b>U-Net</b> generator and a <b>PatchGAN</b> discriminator and you have the full recipe.</p>`,
       cards: [
@@ -58,7 +58,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w6t3", title: "CycleGAN: translation without pairs", lec: [40, 43], min: 14,
+      id: "w6t3", title: "CycleGAN: translation without pairs", lec: [40, 43], min: 10,
       hook: R`Nobody has photographed the same horse as a zebra. Yet CycleGAN learns to turn horses into zebras. With no pairs to compare against, what stops the generator from drawing any random zebra?`,
       reveal: R`<p>The <b>round trip</b>. Horse → zebra → horse must give back the original horse. If the generator ignored its input and drew a random zebra, the reverse generator could not recover the original horse. That rule is the <b>cycle-consistency loss</b>.</p>`,
       cards: [
@@ -70,7 +70,7 @@ COURSE.weeks.push({
         { h: "The cycle-consistency and identity losses", b: R`<div class="eq">$$L_{\text{cyc}} = \mathbb{E}_x\,\|F(G(x)) - x\|_1 + \mathbb{E}_y\,\|G(F(y)) - y\|_1$$<span class="eqnote">Forward cycle $x \to G \to F \to x$, and backward cycle $y \to F \to G \to y$.</span></div>
           <div class="eq">$$L = L_{\text{GAN}}(G, D_Y) + L_{\text{GAN}}(F, D_X) + \lambda\, L_{\text{cyc}}, \qquad \lambda = 10$$</div>
           <div class="eq">$$L_{\text{identity}} = \mathbb{E}_y\,\|G(y) - y\|_1 + \mathbb{E}_x\,\|F(x) - x\|_1$$<span class="eqnote">Optional: feeding a zebra to the horse→zebra generator should change nothing. It keeps colours from drifting.</span></div>
-          <p>The original paper used least-squares GAN losses, a ResNet-style generator and PatchGAN discriminators.</p>`,
+          <p>The original paper used least-squares GAN losses, a ResNet-style generator and PatchGAN discriminators.</p><div class="examfocus">Know what each loss protects: the cycle loss says “a round trip gives back the original”; the identity loss says “a picture already in the target style passes through unchanged”. The usual weight is $\lambda = 10$.</div>`,
           ask: { q: "The cycle-consistency loss compares:", o: [R`$G(x)$ with a paired target $y$`, R`$F(G(x))$ with the original $x$`, R`$D_X$ with $D_Y$`, R`$x$ with a random $y$`], a: 1, x: "Translate there and back again; you should get the input back." } },
         { h: "Uses, limits and the hands-on", b: R`<ul><li><b>Uses</b>: style transfer (photo ↔ Monet painting), seasons (summer ↔ winter), horse ↔ zebra, domain adaptation (computer-game images ↔ real photos), medical scan types.</li><li><b>Limits</b>: good at changing <b>texture and colour</b>, weak at changing <b>shape</b> (cat → dog). It can also secretly hide information in tiny pixel changes to pass the cycle test.</li><li>The practical session trains $G$, $F$, $D_X$, $D_Y$ with adversarial, cycle and identity losses and shows translations in both directions.</li></ul>` }
       ],
@@ -85,7 +85,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w6t4", title: "StyleGAN and StyleGAN2", lec: [41, 42], min: 17,
+      id: "w6t4", title: "StyleGAN and StyleGAN2", lec: [41, 42], min: 18,
       hook: R`Older GANs feed the noise vector into the first layer and hope for the best. StyleGAN feeds the first layer a <b>constant</b>, the same for every image. So where does each face's identity come from?`,
       reveal: R`<p>From <b>styles</b> injected at every layer. The noise $z$ goes through a mapping network to $w$, and $w$ adjusts each layer's features through <b>AdaIN</b>. Early (coarse) layers set pose and face shape; late (fine) layers set colour and tiny texture. Separate per-pixel noise adds random detail such as hair strands and freckles.</p>`,
       cards: [

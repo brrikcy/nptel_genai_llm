@@ -36,7 +36,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w5t2", title: "The GAN objective, built step by step", lec: [33], min: 19,
+      id: "w5t2", title: "The GAN objective, built step by step", lec: [33], min: 14,
       hook: R`The discriminator is just a yes/no classifier trained with binary cross-entropy. Start from BCE, put in $y = 1$ for real and $y = 0$ for fake, and you get the famous GAN equation. Try it before reading on.`,
       reveal: R`<p>$\text{BCE} = -[y\log\hat{y} + (1-y)\log(1-\hat{y})]$. Real ($y = 1$, $\hat{y} = D(x)$) leaves $-\log D(x)$. Fake ($y = 0$, $\hat{y} = D(G(z))$) leaves $-\log(1 - D(G(z)))$. Add them, flip the sign and average over many examples: $V(D, G) = \mathbb{E}[\log D(x)] + \mathbb{E}[\log(1 - D(G(z)))]$. D pushes $V$ up; G pushes it down.</p>`,
       cards: [
@@ -46,7 +46,7 @@ COURSE.weeks.push({
           <p>Making $L_D$ small is the same as making $V_D = \log D(x) + \log(1 - D(G(z)))$ <b>big</b>. Averaged over a batch it becomes an expected value:</p>
           <div class="eq">$$\max_\theta \; V(\theta; \phi) = \mathbb{E}_{x \sim p_{\text{data}}}\big[\log D_\theta(x)\big] + \mathbb{E}_{z \sim p_z}\big[\log\big(1 - D_\theta(G_\phi(z))\big)\big]$$</div>
           <p>The semicolon in $V(\theta; \phi)$ means: only $\theta$ is being changed; $\phi$ is held fixed.</p>
-          <div class="steps"><ol><li>$D(x) = 0.9$, $D(G(z)) = 0.2$.</li><li>$L_D = -\ln 0.9 - \ln 0.8 = 0.105 + 0.223 = 0.329$.</li></ol></div>` },
+          <div class="steps"><ol><li>$D(x) = 0.9$, $D(G(z)) = 0.2$.</li><li>$L_D = -\ln 0.9 - \ln 0.8 = 0.105 + 0.223 = 0.329$.</li></ol></div><div class="examfocus">Plug numbers into $L_D = -\ln D(x) - \ln(1 - D(G(z)))$. Know that D wants $D(x) \to 1$ and $D(G(z)) \to 0$, and that at the balance point $D = \frac{1}{2}$ everywhere, giving $V = -\ln 4 \approx -1.386$.</div>` },
         { h: "Why D pushes D(x) towards 1 and D(G(z)) towards 0", b: R`<div class="tablewrap"><table><tr><th>$D(x)$ on a real image</th><th>$\log D(x)$</th></tr><tr><td>0.1 (bad)</td><td>$-2.303$</td></tr><tr><td>0.5</td><td>$-0.693$</td></tr><tr><td>0.9 (good)</td><td>$-0.105$</td></tr><tr><td>1 (best)</td><td>$0$</td></tr></table></div>
           <p>$\log D(x)$ rises towards its largest value 0 as $D(x) \to 1$. In the same way $\log(1 - D(G(z)))$ is largest (→ 0) as $D(G(z)) \to 0$. So pushing $V$ up makes D say 1 for real and 0 for fake.</p>
           <div class="remember">Memorise: $\ln 0.1 = -2.303$, $\ln 0.5 = -0.693$, $\ln 0.9 = -0.105$.</div>`, w: "ganloss" },
@@ -95,7 +95,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w5t4", title: "DCGAN and the hands-on GANs", lec: [35, 36, 37], min: 14,
+      id: "w5t4", title: "DCGAN and the hands-on GANs", lec: [35, 36, 37], min: 8,
       hook: R`Swap the plain networks inside a GAN for CNNs and training often blows up. DCGAN found a few design rules that made convolutional GANs train reliably. Guess one: what replaces max pooling?`,
       reveal: R`<p><b>Strided convolutions</b> in the discriminator (shrinking with learned weights) and <b>transposed convolutions</b> in the generator (growing with learned weights). No pooling, no fully connected hidden layers, and batch normalisation almost everywhere.</p>`,
       cards: [

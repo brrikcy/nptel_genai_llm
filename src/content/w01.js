@@ -50,7 +50,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w1t2", title: "Activation functions and loss functions", lec: [2], min: 16,
+      id: "w1t2", title: "Activation functions and loss functions", lec: [2], min: 26,
       hook: R`Stack 100 layers that each only multiply and add. A single such layer can do everything this 100-layer tower can. Why?`,
       reveal: R`<p>Multiplying and adding, then multiplying and adding again, is still just multiplying and adding: $W_3(W_2(W_1 x)) = (W_3 W_2 W_1)\,x$, one matrix. Without a bend between layers, depth adds nothing. That bend is the <b>activation function</b>. It lets networks draw curved boundaries and copy almost any pattern.</p>`,
       cards: [
@@ -112,7 +112,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w1t3", title: "How networks learn: optimizers", lec: [3, 4], min: 16,
+      id: "w1t3", title: "How networks learn: optimizers", lec: [3, 4], min: 20,
       hook: R`Blindfolded, you must walk down a long, narrow ravine to the bottom. Tiny careful steps, big steps, or steps that slowly build up speed: which gets you down fastest?`,
       reveal: R`<p>Tiny steps take forever; big steps bounce from wall to wall. Building up speed (<b>momentum</b>) cancels the side-to-side bouncing. Even better, take long strides along the gentle floor and short steps across the steep walls (<b>RMSProp, Adam</b>). That is this whole topic.</p>`,
       cards: [
@@ -179,7 +179,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w1t5", title: "Inside a full CNN: ReLU, pooling, flatten, dense, ensembles", lec: [6, 7, 8, 9], min: 15,
+      id: "w1t5", title: "Inside a full CNN: ReLU, pooling, flatten, dense, ensembles", lec: [6, 7, 8, 9], min: 18,
       hook: R`A CNN's convolution layers hand you a block of $7 \times 7 \times 64$ numbers. A classifier needs one probability per class. What must happen in between, and which of those steps have nothing to learn?`,
       reveal: R`<p>ReLU, then <b>pooling</b> to shrink the block, then <b>flatten</b> it into a list of $7 \times 7 \times 64 = 3{,}136$ numbers, then <b>dense</b> (fully connected) layers ending in softmax. ReLU, pooling and flatten have <b>zero</b> learnable parameters; only convolution and dense layers learn weights.</p>`,
       cards: [

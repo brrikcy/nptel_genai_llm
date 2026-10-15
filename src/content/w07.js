@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`Diffusion models learn to create by learning to clean. Ruin images with tiny sprinkles of noise over many steps (forward), then train a network to undo one step at a time (reverse). This week: the idea, the probability tools, and the DDPM forward and reverse processes with their training loss. Lectures 44–48.`,
   topics: [
     {
-      id: "w7t1", title: "Diffusion: create by learning to clean", lec: [44], min: 14,
+      id: "w7t1", title: "Diffusion: create by learning to clean", lec: [44], min: 10,
       hook: R`Drop ink into water and it spreads until the glass is evenly cloudy. Run the film backwards and the ink gathers back into a drop. That never happens on its own. Why might a neural network be able to learn it anyway?`,
       reveal: R`<p>Because each forward step adds only a <b>tiny</b> bit of Gaussian noise, undoing one step is a small, simple problem a network can learn. Chain a thousand learned small reversals and pure noise turns back into an image. That is a <b>diffusion model</b>.</p>`,
       cards: [
@@ -33,7 +33,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w7t2", title: "Maths toolkit: Gaussians, covariance, Markov chains", lec: [45], min: 14,
+      id: "w7t2", title: "Maths toolkit: Gaussians, covariance, Markov chains", lec: [45], min: 13,
       hook: R`Four people's heights and weights: as height goes up, weight goes up. How would you capture “they move together” in one number, and why would a model of million-pixel images care?`,
       reveal: R`<p>That number is the <b>covariance</b>. Neighbouring pixels in an image move together just like height and weight, so describing images needs <b>multivariate</b> (many-variable) Gaussians with a covariance matrix. Diffusion models use the simplest kind: noise with the same spread in every pixel and no links between pixels, written $\sigma^2 I$.</p>`,
       cards: [
@@ -60,7 +60,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w7t3", title: "DDPM forward process and the noise schedule", lec: [46, 48], min: 17,
+      id: "w7t3", title: "DDPM forward process and the noise schedule", lec: [46, 48], min: 20,
       hook: R`To get the noisy image at step 700, do you really have to add noise 700 times in a row? There is a shortcut. Can you see why one should exist?`,
       reveal: R`<p>Each step shrinks the image a little and adds independent Gaussian noise. Shrunk Gaussians plus Gaussians stay Gaussian (last topic), so 700 steps collapse into one jump: $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. Training can jump straight to any step.</p>`,
       cards: [
@@ -104,7 +104,7 @@ COURSE.weeks.push({
           <p>Problem: when generating, $x_0$ is exactly what we do not have. Trick: turn the shortcut formula around, $x_0 = \frac{x_t - \sqrt{1 - \bar{\alpha}_t}\,\varepsilon}{\sqrt{\bar{\alpha}_t}}$, and substitute. Everything tidies up to a formula needing only $x_t$ and the noise:</p>
           <div class="eq">$$\tilde{\mu}_t = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\varepsilon\right)$$</div>
           <p>Finally replace the true $\varepsilon$ by the network's guess $\varepsilon_\theta(x_t, t)$. So the network only has to <b>guess the noise</b>.</p>
-          <div class="steps"><ol><li>$\bar{\alpha}_{t-1} = 0.9$, $\bar{\alpha}_t = 0.8$, $\beta_t = 0.1111$.</li><li>$\tilde{\beta}_t = \frac{1 - 0.9}{1 - 0.8} \times 0.1111 = \frac{0.1}{0.2} \times 0.1111 = 0.0556$.</li></ol></div>` },
+          <div class="steps"><ol><li>$\bar{\alpha}_{t-1} = 0.9$, $\bar{\alpha}_t = 0.8$, $\beta_t = 0.1111$.</li><li>$\tilde{\beta}_t = \frac{1 - 0.9}{1 - 0.8} \times 0.1111 = \frac{0.1}{0.2} \times 0.1111 = 0.0556$.</li></ol></div><div class="examfocus">You will not have to derive $\tilde{\mu}_t$. Expect to: compute $\tilde{\beta}_t$ from given numbers, compute $\hat{x}_0 = \frac{x_t - \sqrt{1 - \bar{\alpha}_t}\,\hat{\varepsilon}}{\sqrt{\bar{\alpha}_t}}$, and know that the network predicts the noise.</div>` },
         { h: "The training loss: guess the noise", b: R`<div class="eq">$$L_{\text{simple}} = \mathbb{E}_{t,\, x_0,\, \varepsilon}\Big\|\, \varepsilon - \varepsilon_\theta\big(\sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon,\ t\big)\Big\|^2$$</div>
           <p>In words: make a noisy image with known noise, ask the network to guess that noise, and penalise the squared error (MSE). It comes from the ELBO (Week 3): each step's KL between two Gaussians boils down to an MSE between their means, which becomes an MSE on the noise. Ho et al. (2020) simply drop the weighting factors.</p>
           <p>One network handles every $t$, so it must be <b>told $t$</b> (a time embedding, see the U-Net next week).</p>`, f: ["ddpmLoops", "Training (left) jumps to a random step and learns to guess the noise. Generation (right) starts from noise and removes a little at every step."] },

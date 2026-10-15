@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`The VAE turns the autoencoder into a real generator by making its codes fuzzy clouds instead of single points, and pulling all the clouds into one shared bell curve. First the information tools (surprise, entropy, cross-entropy, KL), then the encoder, decoder, loss and the “reparameterisation trick”, and finally a full worked example. Lectures 19–24.`,
   topics: [
     {
-      id: "w3t1", title: "Information, entropy and KL divergence", lec: [19, 20], min: 19,
+      id: "w3t1", title: "Information, entropy and KL divergence", lec: [19, 20], min: 25,
       hook: R`Weather report A says “sunny in the Sahara today”. Report B says “snow in the Sahara today”. Which one tells you more, and can you turn your answer into a number?`,
       reveal: R`<p>The surprising one. Information measures surprise: $I(x) = -\log p(x)$. A near-certain event ($p \approx 1$) carries almost 0 information; a rare event carries a lot. The <i>average</i> surprise of a distribution is its <b>entropy</b>. The <i>extra</i> surprise you suffer by using the wrong distribution is the <b>KL divergence</b>, the key ingredient of the VAE.</p>`,
       cards: [
@@ -43,7 +43,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w3t2", title: "The VAE: probabilistic encoder, decoder and ELBO", lec: [21, 22], min: 22,
+      id: "w3t2", title: "The VAE: probabilistic encoder, decoder and ELBO", lec: [21, 22], min: 21,
       hook: R`A plain autoencoder sends each image to one point. What if the encoder instead said “this image lives somewhere in <i>this cloud</i>”, and every cloud were pulled towards the same bell curve centred at 0? What would that give you when you want to create new images?`,
       reveal: R`<p>Because all the clouds overlap around the standard normal $\mathcal{N}(0, I)$, you can pick any $z$ from $\mathcal{N}(0, I)$ and decode it into something realistic: the gaps between training codes are filled in. That is the VAE: an encoder that outputs a cloud $q_\phi(z \mid x)$, a decoder $p_\theta(x \mid z)$, and a loss that balances “rebuild well” against “stay close to the bell curve”.</p>`,
       cards: [
@@ -69,7 +69,7 @@ COURSE.weeks.push({
           <div class="eq">$$L_{\text{VAE}} = \text{Reconstruction loss (MSE or BCE)} + D_{\mathrm{KL}}\big(q_\phi(z \mid x) \,\|\, \mathcal{N}(0, I)\big)$$</div>
           <div class="eq">$$D_{\mathrm{KL}} = \frac{1}{2}\sum_{j} \left(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1\right)$$<span class="eqnote">The ready-made formula when $q$ is a Gaussian with diagonal spread and the prior is $\mathcal{N}(0, I)$.</span></div>
           <ul><li>The reconstruction term makes codes informative.</li><li>The KL term pulls every cloud towards $\mathcal{N}(0, I)$, giving a smooth, continuous space you can sample from. Too strong a pull and you get <b>posterior collapse</b>: the decoder ignores $z$ and outputs blurry averages.</li><li>To <b>generate</b>: sample $z \sim \mathcal{N}(0, I)$ and run only the decoder.</li></ul>
-          <div class="steps"><ol><li>One latent dimension, $\mu = 1$, $\log\sigma^2 = 0$, so $\sigma^2 = 1$.</li><li>$\frac{1}{2}(1^2 + 1 - 0 - 1) = 0.5$.</li></ol></div>`, w: "vaeloss" }
+          <div class="steps"><ol><li>One latent dimension, $\mu = 1$, $\log\sigma^2 = 0$, so $\sigma^2 = 1$.</li><li>$\frac{1}{2}(1^2 + 1 - 0 - 1) = 0.5$.</li></ol></div><div class="examfocus">Know the two parts by name (reconstruction + KL) and what each one pushes for. Be ready to plug numbers into $\frac{1}{2}\sum_j(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1)$. You will not be asked to derive the ELBO.</div>`, w: "vaeloss" }
       ],
       keys: [R`Prior $p(z) = \mathcal{N}(0, I)$; encoder $q_\phi(z \mid x) = \mathcal{N}(\mu, \mathrm{diag}\,\sigma^2)$ approximates the intractable posterior $p(z \mid x)$.`, R`Encoder heads $\mu$ and $\log\sigma^2$ have no activation; $\sigma^2 = e^{\log\sigma^2}$, $\sigma = e^{\frac{1}{2}\log\sigma^2}$.`, R`$\text{ELBO} = \mathbb{E}_q[\log p(x \mid z)] - D_{\mathrm{KL}}(q(z \mid x) \,\|\, p(z)) \le \log p(x)$; the gap is $D_{\mathrm{KL}}(q(z \mid x) \,\|\, p(z \mid x))$.`, R`$L_{\text{VAE}} = \text{reconstruction} + \frac{1}{2}\sum_j(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1)$.`, R`Generate by sampling $z \sim \mathcal{N}(0, I)$ and running only the decoder.`],
       traps: [R`You MAXIMISE the ELBO, which means MINIMISING the loss $= -\text{ELBO}$.`, R`The KL in the loss is to the prior $p(z)$, not to the true posterior.`, R`The KL term is zero only when $\mu = 0$ and $\sigma^2 = 1$ in every dimension.`],
@@ -86,7 +86,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w3t3", title: "The reparameterisation trick", lec: [23], min: 13,
+      id: "w3t3", title: "The reparameterisation trick", lec: [23], min: 15,
       hook: R`Backpropagation needs a slope at every step. In the middle of the VAE sits the step “draw a random sample”. What is the slope of rolling a die?`,
       reveal: R`<p>There isn't one: “pick at random” is not a smooth formula in $\mu$ and $\sigma$, so gradients cannot flow back to the encoder. The trick moves the randomness <i>out of the way</i>: draw $\varepsilon \sim \mathcal{N}(0, 1)$ separately, then compute $z = \mu + \sigma \odot \varepsilon$. That is an ordinary formula you can take slopes of.</p>`,
       cards: [
@@ -115,7 +115,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w3t4", title: "A full VAE forward pass, by hand", lec: [24, 25], min: 15,
+      id: "w3t4", title: "A full VAE forward pass, by hand", lec: [24, 25], min: 16,
       hook: R`In the lecture's example, the total loss comes out at $10.06$, and almost all of it is reconstruction error. Does that mean the VAE is broken?`,
       reveal: R`<p>No: the weights are random before training, so the rebuild is poor at first. Training drives the reconstruction error down while the KL term keeps the latent space tidy. The point of the example is the <b>order of the steps</b>, which you must be able to reproduce in the exam.</p>`,
       cards: [

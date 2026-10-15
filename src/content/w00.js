@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`This course is taught to engineering students, so the lectures assume some maths you may not have met in Class 10. This week fills those gaps in about 70 minutes: probability with a condition, exponents and logs, vectors and matrices, slopes, and the bell curve. Every later week builds on these five ideas, so do not skip it.`,
   topics: [
     {
-      id: "w0t1", title: "Probability, the language of chance", lec: [], min: 14,
+      id: "w0t1", title: "Probability, the language of chance", lec: [], min: 16,
       hook: R`In a class, 40 of 100 emails are spam. 30 of the spam emails contain the word “WIN”, but only 6 of the 60 normal emails do. An email arrives with “WIN” in it. Is it more likely spam or normal?`,
       reveal: R`<p>Count only the emails that contain “WIN”: $30 + 6 = 36$. Of these, 30 are spam. So the chance it is spam, <i>given</i> that it says WIN, is $\frac{30}{36} \approx 0.83$. Spam is far more likely. This “given that” idea is called <b>conditional probability</b>, and it is the heart of this course.</p>`,
       cards: [
@@ -44,7 +44,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w0t2", title: "Exponents, logs and the sigma sign", lec: [], min: 14,
+      id: "w0t2", title: "Exponents, logs and the sigma sign", lec: [], min: 16,
       hook: R`Multiply 0.9 by itself 200 times and your calculator shows 0.0000000007. Computers multiplying thousands of small probabilities run out of digits and get exactly 0. What trick lets them avoid this?`,
       reveal: R`<p>They take <b>logs</b>. A log turns multiplication into addition: $\log(a \times b) = \log a + \log b$. So instead of multiplying 200 tiny numbers, add 200 ordinary numbers: $200 \times \log 0.9 \approx -21$. That is why almost every loss in this course has a $\log$ in it.</p>`,
       cards: [
@@ -83,7 +83,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w0t3", title: "Vectors, dot products and matrices", lec: [], min: 14,
+      id: "w0t3", title: "Vectors, dot products and matrices", lec: [], min: 16,
       hook: R`A computer cannot “see” a photo or “read” a word. It only handles numbers. How can the word “king” be closer in meaning to “queen” than to “banana”, if all the computer has is numbers?`,
       reveal: R`<p>Each word becomes a <b>vector</b>, a list of numbers such as $[0.8, 0.1, 0.6]$. Words with similar meanings get similar lists, so their arrows point in nearly the same direction. The <b>dot product</b> measures how much two arrows agree. This is how Week 9's word embeddings and Week 10's attention work.</p>`,
       cards: [
@@ -152,7 +152,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w0t5", title: "Averages, spread and the bell curve", lec: [], min: 14,
+      id: "w0t5", title: "Averages, spread and the bell curve", lec: [], min: 16,
       hook: R`Measure the heights of 1,000 Class 10 students and draw a bar chart. Whatever the school, the chart comes out the same shape. What shape, and why does every image-generating AI start from it?`,
       reveal: R`<p>A <b>bell curve</b>, also called the <b>normal</b> or <b>Gaussian</b> distribution: most values sit near the average and fewer and fewer lie far away. It is so easy to sample from that image generators (VAEs, GANs, diffusion) all begin by drawing random numbers from a bell curve and then reshaping them into a picture.</p>`,
       cards: [

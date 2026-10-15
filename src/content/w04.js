@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`With a working VAE, this week asks three questions. Can each code number mean one clear thing ($\beta$-VAE)? Can we ask for a particular kind of output (conditional VAE)? Can we glide smoothly from one image to another (interpolation)? The hands-on sessions build a VAE, a cVAE and a $\beta$-VAE. Lectures 25–30.`,
   topics: [
     {
-      id: "w4t1", title: "Disentangled latents and the beta-VAE", lec: [26, 30], min: 16,
+      id: "w4t1", title: "Disentangled latents and the beta-VAE", lec: [26, 30], min: 18,
       hook: R`A face generator has 32 knobs (latent numbers). You turn knob 7 hoping to add a smile, and the face smiles, ages ten years and turns its head. What has gone wrong inside the latent space?`,
       reveal: R`<p>The latent space is <b>entangled</b>: one knob controls a mixture of features. In a <b>disentangled</b> space each independent feature (smile, age, pose) gets its own knob. The $\beta$-VAE pushes towards this by making the KL term count more, at a price.</p>`,
       cards: [
@@ -64,7 +64,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w4t3", title: "Latent space interpolation", lec: [28], min: 11,
+      id: "w4t3", title: "Latent space interpolation", lec: [28], min: 13,
       hook: R`Average a photo of a cat and a photo of a dog pixel by pixel and you get a ghostly double exposure. Average their VAE codes and decode, and you can get a believable cat-dog in between. Why does one work and not the other?`,
       reveal: R`<p>Real images occupy only a thin, curved “sheet” (a <b>manifold</b>) inside the space of all pixel grids. The straight line between two pixel grids leaves that sheet, giving ghosting. The VAE's latent space is smooth and gap-free (thanks to the KL term), so the straight line between two codes stays where every point decodes to a realistic image.</p>`,
       cards: [

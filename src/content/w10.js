@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`From architecture to the models you use every day: the Transformer decoder and subword tokens, the encoder-only BERT, the decoder-only GPT, and how to talk to an LLM with prompts (zero-, one- and few-shot, chain-of-thought, role and structured prompting). Lectures 59–63.`,
   topics: [
     {
-      id: "w10t1", title: "The Transformer decoder and subword tokenisation", lec: [59], min: 16,
+      id: "w10t1", title: "The Transformer decoder and subword tokenisation", lec: [59], min: 13,
       hook: R`A word-level vocabulary has never seen the word “unfriendliness”. A letter-by-letter model needs 14 steps to write it. Is there a middle way that never meets an unknown word and still keeps sequences short?`,
       reveal: R`<p><b>Subword tokenisation</b>: common words stay whole, rare words split into known pieces (un + friend + li + ness). <b>Byte-pair encoding</b> builds this vocabulary by repeatedly gluing together the most frequent neighbouring pair.</p>`,
       cards: [
@@ -35,13 +35,13 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w10t2", title: "BERT: the bidirectional encoder", lec: [60], min: 14,
+      id: "w10t2", title: "BERT: the bidirectional encoder", lec: [60], min: 13,
       hook: R`To understand “bank” in “I sat by the bank of the river”, you need the words on its <i>right</i>. A left-to-right model cannot see them. How do you train a model that reads both directions without letting it cheat by seeing the answer?`,
       reveal: R`<p><b>Hide the word</b> and ask the model to guess it from both sides: <b>masked language modelling</b>. Hide 15% of the tokens and the model must use context from left and right, without ever seeing the hidden word.</p>`,
       cards: [
         { h: "Why BERT was needed (Lecture 60)", b: R`<p>BERT (Google, 2018; Devlin et al., NAACL 2019) fixed four limits of earlier models:</p>
           <ul><li><b>Static embeddings</b>: “I deposited money in the bank” and “the bank of the river” got one vector.</li><li><b>Left-to-right only</b>: “The movie was ____.” ignores what comes after.</li><li><b>Weak long-range understanding</b> in RNNs and LSTMs.</li><li><b>One model per task</b>: separate models for sentiment, question answering, named entities…</li></ul>
-          <p><b>Why only the encoder?</b> BERT's goal is to <b>understand</b> text, not to write it: question answering (paragraph + question → “Paris”), sentiment (“I absolutely loved this movie” → Positive), named-entity recognition (“Dr. John visited AIIMS Hospital on 1st August 2025” → PER, ORG, DATE), and text classification.</p>` },
+          <p><b>Why only the encoder?</b> BERT's goal is to <b>understand</b> text, not to write it: question answering (paragraph + question → “Paris”), sentiment (“I absolutely loved this movie” → Positive), named-entity recognition (“Dr. John visited AIIMS Hospital on 1st August 2025” → PER (person), ORG (organisation), DATE), and text classification.</p>` },
         { h: "Architecture and inputs", b: R`<ul><li><b>Encoder-only</b> Transformer, bidirectional self-attention, <b>no</b> causal mask.</li><li><b>BERT-Base</b>: 12 layers, hidden size 768, 12 heads, about 110 million parameters. <b>BERT-Large</b>: 24 layers, 1024, 16 heads, about 340 million.</li><li>WordPiece vocabulary of about 30,000.</li><li>Special tokens: <b>[CLS]</b> at the start (its final vector summarises the whole input, used for classification) and <b>[SEP]</b> between and after sentences.</li><li><b>Input embedding = token + position + segment</b>: the segment embedding says whether a token belongs to sentence A or sentence B.</li></ul>`, f: ["bertInput", "BERT's input: each token's vector is the sum of a token embedding, a segment embedding and a position embedding."] },
         { h: "Pre-training: two self-supervised tasks", b: R`<p>A <b>language model</b> learns how likely sequences of words are. BERT pre-trains on BooksCorpus + Wikipedia with two tasks that need no human labels:</p>
           <ul><li><b>Masked Language Modelling (MLM)</b>: pick 15% of the tokens. Of those, 80% become [MASK], 10% become a random token, 10% stay unchanged. Predict the originals. (“The boy is [MASK] football” → playing.) The 80/10/10 split avoids training only on [MASK], which never appears later.</li><li><b>Next Sentence Prediction (NSP)</b>: given sentences A and B, is B really the next sentence? “Rahul went to the grocery store.” + “He bought some milk.” → IsNext; + “The Eiffel Tower is in Paris.” → NotNext. 50% true, 50% random. Uses the [CLS] output.</li></ul>
@@ -63,7 +63,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w10t3", title: "GPT: decoder-only large language models", lec: [61], min: 14,
+      id: "w10t3", title: "GPT: decoder-only large language models", lec: [61], min: 12,
       hook: R`GPT is trained on one absurdly simple task: predict the next token. Nobody trained it to translate, summarise or write code, yet it does all three. Where do those skills come from?`,
       reveal: R`<p>To predict the next token across trillions of words of web text, books and code, the model has to pick up grammar, facts, reasoning patterns, translations and code structure along the way. Scale turns next-token prediction into general ability, and prompts call those skills up.</p>`,
       cards: [
@@ -96,7 +96,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w10t4", title: "Prompt engineering", lec: [62, 63], min: 17,
+      id: "w10t4", title: "Prompt engineering", lec: [62, 63], min: 10,
       hook: R`“Explain machine learning.” vs “Explain machine learning to first-year engineering students in 150 words, in simple language, with one real-world example.” Same model, same knowledge. Why is the second answer so much more useful?`,
       reveal: R`<p>The second prompt states the <b>task</b>, the <b>audience</b>, the <b>length and format</b>, and a <b>constraint</b>, which removes guesswork. The model does not know more; it knows more precisely what you want. That is <b>prompt engineering</b>.</p>`,
       cards: [

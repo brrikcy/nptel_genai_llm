@@ -4,7 +4,7 @@ COURSE.weeks.push({
   intro: R`The autoencoder is the course's first step towards generation: squeeze data through a narrow code, then rebuild it. This week covers how it works, its losses, the main types, three “regularised” versions, and the limits that lead straight to the VAE. Lectures 10–18.`,
   topics: [
     {
-      id: "w2t1", title: "Autoencoders: learn by squeezing", lec: [10], min: 17,
+      id: "w2t1", title: "Autoencoders: learn by squeezing", lec: [10], min: 12,
       hook: R`You must describe a friend's face to a sketch artist using only 10 numbers. Which 10 would you choose, and how would you know they were good choices?`,
       reveal: R`<p>You would pick the numbers that let the artist <b>redraw the face best</b>. That is exactly how an autoencoder learns: squeeze the input into a few numbers (the <b>latent code</b>), rebuild the input from them, and judge the code by how close the rebuild is. No labels are needed.</p>`,
       cards: [
@@ -38,7 +38,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w2t2", title: "Reconstruction losses and AE architectures", lec: [11, 12, 17], min: 15,
+      id: "w2t2", title: "Reconstruction losses and AE architectures", lec: [11, 12, 17], min: 18,
       hook: R`Two autoencoders rebuild the same black-and-white handwriting scan. One ends in a sigmoid and uses BCE; the other ends in a linear layer and uses MSE. Which one matches the data, and what goes wrong with the other?`,
       reveal: R`<p>Pixels that are 0/1 or scaled into $[0, 1]$ pair with <b>sigmoid + binary cross-entropy</b>: the sigmoid keeps outputs inside $(0, 1)$, and BCE treats each pixel as a yes/no probability. A linear output could produce $1.4$ or $-0.2$, which are not valid pixel values. Linear + MSE is right for real numbers with no fixed range.</p>`,
       cards: [
@@ -77,7 +77,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w2t3", title: "Regularised autoencoders: denoising, sparse, contractive", lec: [13, 14, 15, 18], min: 19,
+      id: "w2t3", title: "Regularised autoencoders: denoising, sparse, contractive", lec: [13, 14, 15, 18], min: 22,
       hook: R`An overcomplete autoencoder can cheat by copying its input. Three fixes: <b>break the input</b>, <b>ration the neurons</b>, or <b>make the code stubborn</b>. Can you guess which name goes with which fix: denoising, sparse, contractive?`,
       reveal: R`<p><b>Denoising AE</b>: break the input (add noise) but ask for the clean output, so copying no longer works. <b>Sparse AE</b>: ration the neurons, so only a few code units may switch on for any input. <b>Contractive AE</b>: make the code stubborn, so tiny changes in the input barely move it.</p>`,
       cards: [

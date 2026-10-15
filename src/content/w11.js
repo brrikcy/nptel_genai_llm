@@ -39,7 +39,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w11t2", title: "Fine-tuning cheaply: LoRA and QLoRA", lec: [66], min: 12,
+      id: "w11t2", title: "Fine-tuning cheaply: LoRA and QLoRA", lec: [66], min: 17,
       hook: R`Fully fine-tuning a 7-billion-parameter model means storing gradients and optimizer states for all 7 billion weights, and a separate 7-billion-weight copy for every task. What if the change a task needs is secretly very small?`,
       reveal: R`<p>Experiments show it is: the change $\Delta W$ needed to adapt to a task can be described with very few numbers (it has a low <b>rank</b>). LoRA freezes $W$ and learns $\Delta W = BA$ with a tiny rank $r$ (4–64), often under 1% of the parameters, a few megabytes per task.</p>`,
       cards: [
@@ -71,7 +71,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w11t3", title: "Retrieval-augmented generation (RAG)", lec: [67, 69], min: 18,
+      id: "w11t3", title: "Retrieval-augmented generation (RAG)", lec: [67, 69], min: 14,
       hook: R`Ask an LLM about your school's new holiday list, published last month. It answers confidently and wrongly. You could retrain the model every time a document changes, or do something much cheaper when the question arrives. What?`,
       reveal: R`<p>Look the answer up first. <b>Retrieve</b> the relevant passages from your documents, put them into the prompt, and ask the model to answer from them. The documents become an updatable, quotable, <b>non-parametric memory</b>. That is RAG.</p>`,
       cards: [
@@ -103,7 +103,7 @@ COURSE.weeks.push({
       ]
     },
     {
-      id: "w11t4", title: "Beyond basic RAG: Graph RAG and Agentic RAG", lec: [68], min: 10,
+      id: "w11t4", title: "Beyond basic RAG: Graph RAG and Agentic RAG", lec: [68], min: 9,
       hook: R`“Which suppliers of our top three customers also supply our competitors?” No single document chunk holds that answer, so retrieving the 5 most similar chunks fails. What kind of index, or what kind of search process, would succeed?`,
       reveal: R`<p>Either an index that stores <b>relationships</b> (a knowledge graph you can walk through: <b>Graph RAG</b>) or a search process that <b>plans</b>: break the question into steps, retrieve again and again, use tools, check results (<b>Agentic RAG</b>).</p>`,
       cards: [
