@@ -217,18 +217,18 @@
 
   /* 27. LoRA */
   W.lora = (el) => {
-    const b = U.box(el, "LoRA parameter calculator", "Freeze W (d × k). Learn ΔW = B·A with B (d × r) and A (r × k). Count the trainable parameters.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", "d (rows of W)", 256, 8192, 256, 4096)}${U.range("k", "k (columns of W)", 256, 8192, 256, 4096)}${U.range("r", "rank r", 1, 64, 1, 8)}${U.range("L", "Adapted matrices (layers × Q,V)", 1, 128, 1, 64)}</div><div class="readout"></div>`);
+    const b = U.box(el, "LoRA parameter calculator", R`Freeze $W$ ($d \times k$). Learn $\Delta W = BA$ with $B$ ($d \times r$) and $A$ ($r \times k$). Count the trainable parameters.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", R`$d$ (rows of $W$)`, 256, 8192, 256, 4096)}${U.range("k", R`$k$ (columns of $W$)`, 256, 8192, 256, 4096)}${U.range("r", R`rank $r$`, 1, 64, 1, 8)}${U.range("L", "Adapted matrices (layers, Q and V)", 1, 128, 1, 64)}</div><div class="readout"></div>`);
     const draw = (s) => {
       const full = s.d * s.k, lo = s.r * (s.d + s.k);
-      b.querySelector(".readout").innerHTML = `Full fine-tune of one matrix: d·k = ${s.d}×${s.k} = <b>${full.toLocaleString()}</b><br>LoRA: r(d + k) = ${s.r}×(${s.d}+${s.k}) = <b>${lo.toLocaleString()}</b> → <b>${U.f((lo / full) * 100, 3)}%</b> of the original (${U.f(full / lo, 1)}× fewer)<br>Across ${s.L} adapted matrices: ${(full * s.L / 1e6).toFixed(1)} M vs <b>${(lo * s.L / 1e6).toFixed(2)} M</b> trainable parameters<br><span class="muted">h = W₀x + (α/r)·B·A·x. A starts random and B starts at zero, so ΔW = 0 at step 0 and training begins exactly at the pre-trained model. After training, BA can be merged into W₀, so inference has no extra latency. QLoRA adds a 4-bit quantised frozen base model so large models fit on one GPU.</span>`;
+      b.querySelector(".readout").innerHTML = R`Full fine-tune of one matrix: $d \cdot k = ${s.d} \times ${s.k} = ${full.toLocaleString("en-US").replace(/,/g, "{,}")}$<br>LoRA: $r(d + k) = ${s.r} \times (${s.d} + ${s.k}) = ${lo.toLocaleString("en-US").replace(/,/g, "{,}")}$ → <b>${U.f((lo / full) * 100, 3)}%</b> of the original (${U.f(full / lo, 1)} times fewer)<br>Across ${s.L} adapted matrices: ${(full * s.L / 1e6).toFixed(1)} M vs <b>${(lo * s.L / 1e6).toFixed(2)} M</b> trainable parameters<br><span class="muted">$h = W_0 x + \frac{\alpha}{r} BAx$. $A$ starts random and $B$ starts at zero, so $\Delta W = 0$ at the start and training begins exactly at the pre-trained model. Afterwards $BA$ can be merged into $W_0$, so there is no extra delay when answering. QLoRA stores the frozen base model in 4 bits so big models fit on one GPU.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 28. RAG pipeline */
   W.rag = (el) => {
-    const b = U.box(el, "A working mini-RAG", "Eight passages form the knowledge base. Type a question: it is embedded (bag-of-words TF-IDF here), the top-k passages are retrieved by cosine similarity, and the augmented prompt is built.");
+    const b = U.box(el, "A working mini-RAG", "Eight passages form the knowledge base. Type a question: it is turned into numbers (TF-IDF here), the top-k most similar passages are retrieved by cosine similarity, and the augmented prompt is built.");
     const docs = [
       "The Nila Observatory opens at 09:00 and closes at 16:30 on weekdays.",
       "Researchers at the Nila Observatory must book a two-hour slot in advance.",

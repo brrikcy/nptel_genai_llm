@@ -492,4 +492,19 @@
     b.addEventListener("click", (e) => { const a = e.target.closest("[data-act]"); if (!a) return; if (a.dataset.act === "reset") seq = ["the"]; else { const nx = big[seq[seq.length - 1]] || {}; const ent = Object.entries(nx); if (ent.length && seq.length < 24) { let w; if (st.m === "greedy") w = ent.sort((x, y) => y[1] - x[1])[0][0]; else { const tot = ent.reduce((s2, x) => s2 + x[1], 0); let u = r() * tot; w = ent[0][0]; for (const [k, c] of ent) { u -= c; if (u <= 0) { w = k; break; } } } seq.push(w); } } draw(); });
     draw();
   };
+
+  /* ---------- Week 11 ---------- */
+
+  /* In-context learning: the examples decide the task */
+  W.icl = (el) => {
+    const b = U.box(el, "Same names, different examples, different answer", "Pick which examples go in the prompt. The model's weights never change; it reads the pattern from the examples and continues it.");
+    const facts = { Federer: ["Tennis", "Switzerland", "Roger"], Kohli: ["Cricket", "India", "Virat"], Messi: ["Football", "Argentina", "Lionel"], Ronaldo: ["Football", "Portugal", "Cristiano"], Sindhu: ["Badminton", "India", "P. V."] };
+    b.insertAdjacentHTML("beforeend", `${U.seg("rel", [["0", "examples show the sport"], ["1", "examples show the country"], ["2", "examples show the first name"]], "0")}${U.seg("q", [["Messi", "ask about Messi"], ["Kohli", "ask about Kohli"], ["Sindhu", "ask about Sindhu"]], "Messi")}<div class="readout prompt"></div><div class="readout ans"></div>`);
+    const draw = (s) => {
+      const demo = Object.keys(facts).filter((n) => n !== s.q).slice(0, 2), k = +s.rel;
+      b.querySelector(".prompt").innerHTML = `<div class="eyebrow">the prompt</div>${demo.map((n) => `${n} → ${facts[n][k]}`).join("<br>")}<br>${s.q} → <b>?</b>`;
+      b.querySelector(".ans").innerHTML = `Model continues: <b>${facts[s.q][k]}</b><br><span class="muted">Two examples were enough to define the task (${["player → sport", "player → country", "player → first name"][k]}). This is few-shot in-context learning: nothing was trained, and the “skill” vanishes with the next prompt.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();

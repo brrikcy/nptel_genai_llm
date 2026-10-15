@@ -470,6 +470,37 @@
     return svg(560, 205, g, "Prompt anatomy");
   };
 
+  /* ---------- Week 11 ---------- */
+  F.loraFig = () => svg(560, 220, `
+    ${t(30, 112, "x", "b")}${arrow(40, 108, 70, 108)}
+    <rect x="75" y="30" width="150" height="150" fill="var(--sheet-2)" stroke="${MUTE}" stroke-width="2"/>${t(150, 100, "W₀", "b")}${t(150, 120, "frozen (d × k)", "s")}${t(150, 140, "❄", "b")}
+    <rect x="270" y="30" width="22" height="150" fill="var(--warn-soft)" stroke="${W}" stroke-width="2"/>${t(281, 22, "B", "b")}${t(281, 198, "d × r", "s")}
+    <rect x="300" y="94" width="150" height="22" fill="var(--warn-soft)" stroke="${W}" stroke-width="2"/>${t(375, 88, "A (r × k)", "b")}${t(375, 135, "trained: r(d + k) numbers", "s")}
+    ${t(250, 112, "+", "b")}${arrow(455, 105, 485, 105)}${t(520, 100, "h = W₀x", "s")}${t(520, 116, "+ BAx", "s")}
+    ${t(375, 175, "B starts at 0, so BA = 0 at first", "s")}`, "LoRA");
+  F.ragPipeline = () => svg(560, 250, `
+    ${t(10, 18, "ONCE (indexing)", "b", "start")}
+    ${["documents", "chunk", "embed", "vector DB"].map((n, i) => `${box(10 + i * 135, 28, 110, 36, i === 3 ? H : SH, i === 3 ? INK : A, 6)}${t(65 + i * 135, 51, n, "s")}${i < 3 ? arrow(122 + i * 135, 46, 143 + i * 135, 46) : ""}`).join("")}
+    ${t(10, 102, "EVERY QUESTION", "b", "start")}
+    ${["question", "embed", "retrieve top-k", "prompt + chunks", "LLM answer"].map((n, i) => `${box(10 + i * 110, 112, 92, 36, i === 4 ? "var(--good-soft)" : SH, i === 4 ? G : A, 6)}${t(56 + i * 110, 135, n, "s")}${i < 4 ? arrow(104 + i * 110, 130, 117 + i * 110, 130) : ""}`).join("")}
+    <path d="M460 66 L460 90 L276 90 L276 110" fill="none" stroke="${W}" stroke-width="2" stroke-dasharray="5 4"/>${t(368, 86, "closest chunks by cosine similarity", "s")}
+    ${box(110, 180, 340, 56, "var(--sheet)", RULE, 6)}${t(280, 200, "“Answer ONLY from the context below. If it is not", "s")}${t(280, 218, "there, say so. Context: [chunk 1] [chunk 2] … Question: …”", "s")}`, "RAG pipeline");
+  F.graphRagFig = () => {
+    const nodes = [[80, 60, "Asha"], [190, 40, "NovaCorp"], [160, 130, "Delhi"], [60, 160, "Ravi"], [330, 70, "Zeta Ltd"], [420, 40, "Steel"], [440, 140, "Mumbai"], [330, 170, "Kiran"]];
+    const edges = [[0, 1, "works at"], [1, 2, "based in"], [3, 1, "works at"], [0, 3, "knows"], [1, 4, "supplies"], [4, 5, "makes"], [4, 6, "based in"], [7, 4, "runs"]];
+    let g = `<ellipse cx="135" cy="100" rx="125" ry="88" fill="${SOFT}" opacity=".5"/><ellipse cx="385" cy="105" rx="115" ry="88" fill="var(--warn-soft)" opacity=".6"/>`;
+    edges.forEach(([a, b2, l]) => { const [x1, y1] = nodes[a], [x2, y2] = nodes[b2]; g += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${MUTE}" stroke-width="1.5"/>${t((x1 + x2) / 2, (y1 + y2) / 2 - 4, l, "s")}`; });
+    nodes.forEach(([x, y, n]) => (g += `<circle cx="${x}" cy="${y}" r="20" fill="${SH}" stroke="${INK}"/>${t(x, y + 4, n, "s")}`));
+    g += t(135, 215, "community 1 → summary", "s") + t(385, 215, "community 2 → summary", "s");
+    return svg(560, 225, g, "Graph RAG");
+  };
+  F.agentLoop = () => svg(560, 200, `
+    ${box(10, 80, 90, 40, "var(--warn-soft)", W)}${t(55, 105, "goal", "b")}${arrow(102, 100, 160, 100)}
+    <circle cx="210" cy="100" r="45" fill="${SOFT}" stroke="${A}" stroke-width="2"/>${t(210, 96, "agent", "b")}${t(210, 114, "(LLM thinks)", "s")}
+    <path d="M250 75 Q330 20 400 70" fill="none" stroke="${A}" stroke-width="2"/>${arrow(392, 64, 402, 72, A)}${t(325, 32, "action: call a tool", "s")}
+    ${box(405, 70, 140, 60, SH, INK)}${t(475, 94, "tools", "b")}${t(475, 114, "search · SQL · web", "s")}
+    <path d="M400 130 Q330 185 250 125" fill="none" stroke="${G}" stroke-width="2"/>${arrow(258, 132, 248, 124, G)}${t(325, 182, "observation: the result", "s")}`, "Agent loop");
+
   /* Render x_t, c_{t−1}, z_T … in figure labels as real subscripts. */
   const subs = (svgText) => svgText.replace(/>([^<]+)</g, (m, txt) => ">" + txt.replace(/([A-Za-zα-ωεθ̂]+)_(\{[^}]+\}|[A-Za-z0-9θ]+)/g, (mm, base, sb) => `${base}<tspan baseline-shift="sub" font-size="75%">${sb.replace(/^\{|\}$/g, "")}</tspan>`) + "<");
   Object.keys(F).filter((k) => k[0] !== "_").forEach((k) => { const fn = F[k]; F[k] = () => subs(fn()); });
