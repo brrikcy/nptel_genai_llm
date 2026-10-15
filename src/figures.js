@@ -390,4 +390,53 @@
     <path d="M135 90 Q230 90 230 145" fill="none" stroke="${W}" stroke-width="2" stroke-dasharray="5 4"/>${t(240, 88, "cross-attention", "s", "start")}
     ${arrow(302, 172, 340, 172)}${box(342, 152, 90, 40, SH, MUTE)}${t(387, 170, "clean z₀", "s")}${t(387, 185, "64×64×4", "s")}
     ${arrow(434, 172, 455, 172)}${box(457, 140, 96, 64, H, INK)}${t(505, 166, "VAE decoder", "s")}${t(505, 185, "→ 512×512×3", "s")}`, "Stable Diffusion pipeline");
+
+  /* ---------- Week 9 ---------- */
+  F.rnnUnrolled = () => {
+    const ws = ["The", "movie", "is", "not", "good"];
+    let g = "";
+    ws.forEach((w, i) => { const x = 40 + i * 105; g += `${box(x, 90, 70, 44, SOFT, A)}${t(x + 35, 117, "RNN", "b")}${t(x + 35, 172, w)}${arrow(x + 35, 158, x + 35, 136)}${arrow(x + 35, 88, x + 35, 60)}${t(x + 35, 50, "h" + (i + 1), "s")}`; if (i < 4) g += `${arrow(x + 72, 112, x + 103, 112, H)}`; });
+    g += t(280, 205, "same weights U, V, W at every step · memory h is passed along →", "s");
+    return svg(560, 215, g, "Unrolled RNN");
+  };
+  F.lstmCell = () => svg(560, 230, `
+    ${box(20, 30, 520, 170, "var(--sheet)", RULE)}
+    <line x1="20" y1="60" x2="540" y2="60" stroke="${H}" stroke-width="5"/>${t(40, 52, "c_{t−1}", "s", "start")}${t(520, 52, "c_t", "s", "end")}${t(280, 22, "cell state: the long-term memory belt", "s")}
+    <circle cx="150" cy="60" r="15" fill="${SH}" stroke="${INK}"/>${t(150, 65, "×", "b")}<circle cx="300" cy="60" r="15" fill="${SH}" stroke="${INK}"/>${t(300, 65, "+", "b")}
+    ${box(120, 120, 60, 36, "var(--bad-soft)", B, 6)}${t(150, 143, "forget f", "s")}${arrow(150, 118, 150, 77)}
+    ${box(220, 120, 60, 36, "var(--good-soft)", G, 6)}${t(250, 143, "input i", "s")}${box(290, 120, 60, 36, SOFT, A, 6)}${t(320, 143, "cand. g", "s")}<circle cx="300" cy="100" r="12" fill="${SH}" stroke="${INK}"/>${t(300, 104, "×", "s")}${arrow(250, 118, 292, 106)}${arrow(320, 118, 306, 110)}${arrow(300, 88, 300, 77)}
+    ${box(400, 120, 60, 36, "var(--warn-soft)", W, 6)}${t(430, 143, "output o", "s")}<circle cx="470" cy="100" r="12" fill="${SH}" stroke="${INK}"/>${t(470, 104, "×", "s")}${arrow(430, 118, 462, 106)}<path d="M470 62 L470 88" stroke="${MUTE}" stroke-width="2"/>${t(500, 85, "tanh", "s")}
+    ${arrow(482, 100, 520, 100)}${t(526, 104, "h_t", "s", "start")}
+    ${t(60, 185, "inputs: h_{t−1} and x_t feed every gate", "s", "start")}`, "LSTM cell");
+  F.seq2seqFig = () => {
+    let g = t(10, 18, "without attention: one vector carries everything", "b", "start");
+    ["I", "love", "ML"].forEach((w, i) => (g += `${box(20 + i * 70, 30, 56, 30, SOFT, A, 6)}${t(48 + i * 70, 50, w, "s")}${i < 2 ? arrow(77 + i * 70, 45, 89 + i * 70, 45) : ""}`));
+    g += `${arrow(217, 45, 255, 45)}<circle cx="272" cy="45" r="15" fill="${H}" stroke="${INK}"/>${arrow(289, 45, 320, 45)}`;
+    ["Ich", "liebe", "ML"].forEach((w, i) => (g += `${box(322 + i * 70, 30, 56, 30, "var(--good-soft)", G, 6)}${t(350 + i * 70, 50, w, "s")}`));
+    g += t(10, 108, "with attention: the decoder looks back at every input word", "b", "start");
+    const ex = [48, 118, 188];
+    ["I", "love", "ML"].forEach((w, i) => (g += `${box(20 + i * 70, 125, 56, 30, SOFT, A, 6)}${t(48 + i * 70, 145, w, "s")}`));
+    ["Ich", "liebe", "ML"].forEach((w, i) => (g += `${box(322 + i * 70, 125, 56, 30, "var(--good-soft)", G, 6)}${t(350 + i * 70, 145, w, "s")}`));
+    [0.1, 0.8, 0.1].forEach((a, i) => (g += `<path d="M${ex[i]} 157 Q${(ex[i] + 420) / 2} ${195 + i * 4} 420 157" fill="none" stroke="${A}" stroke-width="${1 + a * 5}" opacity="${0.3 + a * 0.7}"/>${t((ex[i] + 420) / 2, 186 + i * 6, "α = " + a, "s")}`));
+    return svg(560, 210, g, "Seq2seq and attention");
+  };
+  F.maskFig = () => {
+    const w = ["I", "love", "deep", "learning"]; let g = "";
+    w.forEach((r, i) => { g += t(90, 62 + i * 40, r, "s", "end"); w.forEach((c, j) => { const ok = j <= i; g += `<rect x="${100 + j * 70}" y="${40 + i * 40}" width="66" height="36" rx="4" fill="${ok ? SOFT : "var(--bad-soft)"}" stroke="${RULE}"/>${t(133 + j * 70, 63 + i * 40, ok ? "✓" : "−∞", "s")}`; }); });
+    w.forEach((c, j) => (g += t(133 + j * 70, 30, c, "s")));
+    g += t(470, 120, "row = word asking", "s", "start") + t(470, 138, "column = word looked at", "s", "start");
+    return svg(600, 210, g, "Causal mask");
+  };
+  F.encoderLayer = () => {
+    const st = [["input embedding + positional encoding", SH, MUTE], ["multi-head self-attention", SOFT, A], ["Add & Norm", "var(--warn-soft)", W], ["feed-forward network (512 → 2048 → 512)", SOFT, A], ["Add & Norm", "var(--warn-soft)", W]];
+    let g = "";
+    st.slice().reverse().forEach(([n, f, c], k) => { const i = 4 - k, y = 200 - i * 42; g += `${box(130, y, 300, 32, f, c, 6)}${t(280, y + 21, n, "s")}${i < 4 ? arrow(280, y, 280, y - 8) : ""}`; });
+    g += `<path d="M125 212 L95 212 L95 122 L125 122" fill="none" stroke="${G}" stroke-width="2" stroke-dasharray="4 3"/><path d="M125 128 L80 128 L80 38 L125 38" fill="none" stroke="${G}" stroke-width="2" stroke-dasharray="4 3"/>${t(60, 90, "residual", "s", "middle")}`;
+    g += `${box(460, 30, 90, 50, SH, INK)}${t(505, 52, "× 6 layers", "b")}${t(505, 70, "own weights", "s")}`;
+    return svg(560, 240, g, "Transformer encoder layer");
+  };
+
+  /* Render x_t, c_{t−1}, z_T … in figure labels as real subscripts. */
+  const subs = (svgText) => svgText.replace(/>([^<]+)</g, (m, txt) => ">" + txt.replace(/([A-Za-zα-ωεθ̂]+)_(\{[^}]+\}|[A-Za-z0-9θ]+)/g, (mm, base, sb) => `${base}<tspan baseline-shift="sub" font-size="75%">${sb.replace(/^\{|\}$/g, "")}</tspan>`) + "<");
+  Object.keys(F).filter((k) => k[0] !== "_").forEach((k) => { const fn = F[k]; F[k] = () => subs(fn()); });
 })();

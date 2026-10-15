@@ -76,10 +76,10 @@
 
   /* 20. Word embeddings */
   W.w2v = (el) => {
-    const b = U.box(el, "Word vectors and analogies", "Toy 2-D embeddings arranged the way Word2Vec/GloVe arrange real ones: directions carry meaning. Compute A − B + C and find the nearest word.");
+    const b = U.box(el, "Word vectors and analogies", R`Toy 2-D embeddings arranged the way Word2Vec and GloVe arrange real ones: directions carry meaning. Compute $A - B + C$ and find the nearest word.`);
     const E = { king: [4.2, 3.6], queen: [4.0, 1.2], man: [1.6, 3.4], woman: [1.4, 1.0], prince: [3.2, 3.9], princess: [3.0, 1.5], boy: [0.8, 3.7], girl: [0.6, 1.3], paris: [-3.2, 2.8], france: [-1.6, 3.6], delhi: [-3.4, 0.2], india: [-1.8, 1.0], apple: [-0.6, -2.6], mango: [-1.4, -2.9] };
     const ws = Object.keys(E); const opt = (v) => ws.map((w) => `<option ${w === v ? "selected" : ""}>${w}</option>`).join("");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls"><div class="ctrl"><label>A</label><select data-k="a">${opt("king")}</select></div><div class="ctrl"><label>− B</label><select data-k="b">${opt("man")}</select></div><div class="ctrl"><label>+ C</label><select data-k="c">${opt("woman")}</select></div></div><div class="plot"></div><div class="readout"></div>`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls"><div class="ctrl"><label>A</label><select data-k="a">${opt("king")}</select></div><div class="ctrl"><label>minus B</label><select data-k="b">${opt("man")}</select></div><div class="ctrl"><label>plus C</label><select data-k="c">${opt("woman")}</select></div></div><div class="plot"></div><div class="readout"></div>`);
     const cos = (u, v) => (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v));
     const draw = (s) => {
       const t = [E[s.a][0] - E[s.b][0] + E[s.c][0], E[s.a][1] - E[s.b][1] + E[s.c][1]];
@@ -89,28 +89,29 @@
       ws.forEach((w) => { const [x, y] = E[w]; const on = [s.a, s.b, s.c].includes(w) || w === ranked[0][0]; g += `<circle cx="${p.X(x)}" cy="${p.Y(y)}" r="${on ? 6 : 4}" fill="${w === ranked[0][0] ? C3 : on ? C1 : "var(--ink-2)"}"/><text x="${p.X(x) + 8}" y="${p.Y(y) + 4}" style="fill:var(--ink)">${w}</text>`; });
       g += `<circle cx="${p.X(t[0])}" cy="${p.Y(t[1])}" r="8" fill="none" stroke="${C2}" stroke-width="3"/>`;
       b.querySelector(".plot").innerHTML = p.svg(g);
-      b.querySelector(".readout").innerHTML = `${s.a} − ${s.b} + ${s.c} = [${U.f(t[0], 2)}, ${U.f(t[1], 2)}] (amber ring)<br>Nearest by cosine similarity: <b>${ranked[0][0]}</b> (${U.f(ranked[0][1], 3)}), then ${ranked[1][0]} (${U.f(ranked[1][1], 3)})<br><span class="muted">Word2Vec learns these from local context windows (CBOW predicts the word from its context; skip-gram predicts the context from the word). GloVe learns them from global co-occurrence counts. Both give one static vector per word, so "bank" (river) and "bank" (money) share a vector. Contextual models like BERT fix that.</span>`;
+      b.querySelector(".readout").innerHTML = R`$\text{${s.a}} - \text{${s.b}} + \text{${s.c}} = [${U.f(t[0], 2)}, ${U.f(t[1], 2)}]$ (gold ring)<br>Nearest by cosine similarity: <b>${ranked[0][0]}</b> (${U.f(ranked[0][1], 3)}), then ${ranked[1][0]} (${U.f(ranked[1][1], 3)})<br><span class="muted">Word2Vec learns these from local context windows (CBOW predicts the word from its context; skip-gram predicts the context from the word). GloVe learns them from global co-occurrence counts. Both give one static vector per word, so "bank" (river) and "bank" (money) share a vector. Contextual models like BERT fix that.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 21. LSTM cell */
   W.lstm = (el) => {
-    const b = U.box(el, "Inside an LSTM cell", "Set the gate values (outputs of sigmoids, so 0–1) and see how the cell state and hidden state update. Then compare gradient flow through an RNN and an LSTM.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("c0", "Previous cell state c_{t−1}", -2, 2, 0.1, 1.5)}${U.range("f", "Forget gate f_t", 0, 1, 0.05, 0.9)}${U.range("i", "Input gate i_t", 0, 1, 0.05, 0.3)}${U.range("g", "Candidate g_t = tanh(·)", -1, 1, 0.05, 0.8)}${U.range("o", "Output gate o_t", 0, 1, 0.05, 0.7)}${U.range("n", "Sequence length (gradient demo)", 5, 100, 5, 40)}</div><div class="readout"></div>`);
+    const b = U.box(el, "Inside an LSTM cell", "Set the gate values (they come from sigmoids, so each is between 0 and 1) and see how the cell state and hidden state update. Then compare how a gradient survives many steps in an RNN and in an LSTM.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("c0", R`Previous cell state $c_{t-1}$`, -2, 2, 0.1, 1.5)}${U.range("f", R`Forget gate $f_t$`, 0, 1, 0.05, 0.9)}${U.range("i", R`Input gate $i_t$`, 0, 1, 0.05, 0.3)}${U.range("g", R`Candidate $g_t$`, -1, 1, 0.05, 0.8)}${U.range("o", R`Output gate $o_t$`, 0, 1, 0.05, 0.7)}${U.range("n", "Sequence length (gradient demo)", 5, 100, 5, 40)}</div><div class="readout"></div>`);
     const draw = (s) => {
       const c = s.f * s.c0 + s.i * s.g, h = s.o * Math.tanh(c);
-      b.querySelector(".readout").innerHTML = `c_t = f_t ⊙ c_{t−1} + i_t ⊙ g_t = ${s.f}×${s.c0} + ${s.i}×${s.g} = <b>${U.f(c, 4)}</b><br>h_t = o_t ⊙ tanh(c_t) = ${s.o}×tanh(${U.f(c, 3)}) = <b>${U.f(h, 4)}</b><br>
-        ${s.f > 0.95 && s.i < 0.1 ? "Memory preserved: forget ≈ 1, input ≈ 0, so the cell carries information forward almost unchanged." : s.f < 0.2 ? "Memory wiped: the forget gate erased c_{t−1}." : ""}<br>
-        Gradient through ${s.n} steps · vanilla RNN with factor 0.9 per step: 0.9^${s.n} = <b>${(0.9 ** s.n).toExponential(2)}</b> (vanishes); with 1.1: <b>${(1.1 ** s.n).toExponential(2)}</b> (explodes)<br>
-        LSTM cell path with f_t = ${s.f}: ${s.f}^${s.n} = <b>${(s.f ** s.n).toExponential(2)}</b>. The gate learns to sit near 1 when long memory matters.<br><span class="muted">That additive cell-state path, controlled by gates, is the LSTM's fix for vanishing gradients. Gradient clipping handles explosions.</span>`;
+      const sci = (v) => { const e = Math.floor(Math.log10(Math.abs(v))); return Math.abs(e) < 3 ? U.f(v, 4) : String.raw`${U.f(v / 10 ** e, 2)} \times 10^{${e}}`; };
+      b.querySelector(".readout").innerHTML = R`$c_t = f_t \odot c_{t-1} + i_t \odot g_t = (${s.f})(${s.c0}) + (${s.i})(${s.g}) = ${U.f(c, 4)}$<br>$h_t = o_t \odot \tanh(c_t) = (${s.o})\tanh(${U.f(c, 3)}) = ${U.f(h, 4)}$<br>
+        ${s.f > 0.95 && s.i < 0.1 ? R`Memory kept: forget $\approx 1$, input $\approx 0$, so the cell carries information forward almost unchanged.` : s.f < 0.2 ? R`Memory wiped: the forget gate erased $c_{t-1}$.` : ""}<br>
+        Gradient through ${s.n} steps · plain RNN shrinking by 0.9 per step: $0.9^{${s.n}} = ${sci(0.9 ** s.n)}$ (vanishes); growing by 1.1: $1.1^{${s.n}} = ${sci(1.1 ** s.n)}$ (explodes)<br>
+        LSTM cell path with $f_t = ${s.f}$: $${s.f}^{${s.n}} = ${sci(s.f ** s.n)}$. The gate learns to stay near 1 when long memory matters.<br><span class="muted">That added-on cell-state path, controlled by gates, is the LSTM's fix for vanishing gradients. Gradient clipping handles explosions.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 22. Self-attention */
   W.attention = (el) => {
-    const b = U.box(el, "Self-attention, computed", "Click a word to see where it looks. Scores are q·k/√d, turned into weights with softmax. Toggle the causal mask a decoder uses.");
+    const b = U.box(el, "Self-attention, computed", R`Click a word to see where it looks. Scores are $\frac{q \cdot k}{\sqrt{d}}$, turned into weights with softmax. Toggle the causal mask a decoder uses.`);
     const words = ["The", "animal", "didn't", "cross", "the", "street", "because", "it", "was", "tired"];
     const v = [[0.1, 0.0, 0.2], [0.9, 0.2, 0.1], [0.1, 0.8, 0.0], [0.2, 0.9, 0.3], [0.1, 0.0, 0.25], [0.3, 0.2, 0.9], [0.0, 0.5, 0.1], [0.85, 0.25, 0.3], [0.2, 0.6, 0.1], [0.8, 0.5, 0.1]];
     b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("m", [["enc", "Encoder (bidirectional)"], ["dec", "Decoder (causal mask)"]], "enc")}</div><div class="tokens">${words.map((w, i) => `<span class="tok ${i === 7 ? "on" : ""}" data-i="${i}" tabindex="0" role="button">${w}</span>`).join("")}</div><div class="plot"></div><div class="readout"></div>`);
@@ -122,7 +123,7 @@
       const W_ = 560, H = 150, bw = W_ / words.length;
       let g = ""; words.forEach((t, j) => { const hgt = w[j] * 110; g += `<rect x="${j * bw + 6}" y="${118 - hgt}" width="${bw - 12}" height="${hgt}" rx="4" fill="${j === sel ? C2 : C1}" opacity="${st.m === "dec" && j > sel ? 0.15 : 1}"/><text x="${j * bw + bw / 2}" y="${136}" text-anchor="middle" style="fill:var(--ink)">${t}</text><text x="${j * bw + bw / 2}" y="${112 - hgt}" text-anchor="middle">${w[j] < 0.005 ? "" : w[j].toFixed(2)}</text>`; });
       b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 ${W_} ${H}">${g}</svg>`;
-      b.querySelector(".readout").innerHTML = `Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V · here d_k = ${d}<br>Query "<b>${words[sel]}</b>" puts its largest weight on "<b>${words[w.indexOf(Math.max(...w))]}</b>" (${Math.max(...w).toFixed(2)}). The weights in the row sum to 1.<br><span class="muted">${st.m === "dec" ? "Causal mask: scores for future positions are set to −∞ before the softmax, so a token can only attend to itself and earlier tokens. That is what makes GPT-style generation autoregressive." : "Encoder self-attention is bidirectional: every token sees every other token. BERT uses this. Multi-head attention runs several of these in parallel with different learned projections and concatenates the results."}</span>`;
+      b.querySelector(".readout").innerHTML = R`$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V$ · here $d_k = ${d}$<br>Query "<b>${words[sel]}</b>" puts its largest weight on "<b>${words[w.indexOf(Math.max(...w))]}</b>" (${Math.max(...w).toFixed(2)}). The weights in the row sum to 1.<br><span class="muted">${st.m === "dec" ? R`Causal mask: scores for future positions are set to $-\infty$ before the softmax, so a token can only look at itself and earlier tokens. That is what makes GPT-style generation one-word-at-a-time.` : "Encoder self-attention is bidirectional: every token sees every other token. BERT uses this. Multi-head attention runs several of these in parallel with different learned projections and concatenates the results."}</span>`;
     };
     st = U.bind(b, draw);
     b.querySelectorAll(".tok").forEach((t) => { const pick = () => { sel = +t.dataset.i; b.querySelectorAll(".tok").forEach((x) => x.classList.toggle("on", x === t)); draw(); }; t.onclick = pick; t.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } }; });
@@ -131,14 +132,14 @@
 
   /* 23. Positional encoding */
   W.posenc = (el) => {
-    const b = U.box(el, "Sinusoidal positional encoding", "PE(pos, 2i) = sin(pos / 10000^(2i/d)), PE(pos, 2i+1) = cos(pos / 10000^(2i/d)). Each row is one position; low dimensions oscillate fast, high dimensions slowly.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", "d_model", 16, 128, 16, 64)}${U.range("pos", "Highlight position", 0, 49, 1, 10)}</div><canvas width="640" height="250" class="wcanvas cv" style="aspect-ratio:640/250"></canvas><div class="readout"></div>`);
+    const b = U.box(el, "Sinusoidal positional encoding", R`$\text{PE}(pos, 2i) = \sin\!\left(\frac{pos}{10000^{2i/d}}\right)$, $\text{PE}(pos, 2i+1) = \cos\!\left(\frac{pos}{10000^{2i/d}}\right)$. Each row is one position; left columns wave fast, right columns slowly.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", R`$d_{\text{model}}$`, 16, 128, 16, 64)}${U.range("pos", "Highlight position", 0, 49, 1, 10)}</div><canvas width="640" height="250" class="wcanvas cv" style="aspect-ratio:640/250"></canvas><div class="readout"></div>`);
     const draw = (s) => {
       const cv = b.querySelector(".cv"), ctx = cv.getContext("2d"); const P = 50, D = s.d; const cw = 640 / D, ch = 250 / P;
       for (let pos = 0; pos < P; pos++) for (let k = 0; k < D; k++) { const i = Math.floor(k / 2); const ang = pos / Math.pow(10000, (2 * i) / D); const v = k % 2 ? Math.cos(ang) : Math.sin(ang); const r = v > 0 ? Math.round(35 + 50 * v) : 35, gg = 70 + Math.round(30 * (1 - Math.abs(v))), bb = v < 0 ? Math.round(120 - 80 * v) : 90; ctx.fillStyle = `rgb(${v > 0 ? 40 + 200 * v : 40},${gg},${v < 0 ? 60 - 190 * v : 60 + 20 * (1 - v)})`; ctx.fillRect(k * cw, pos * ch, cw + 0.5, ch + 0.5); }
       ctx.strokeStyle = U.css("--hi"); ctx.lineWidth = 3; ctx.strokeRect(1, s.pos * ch, 638, ch);
       const vec = []; for (let k = 0; k < 6; k++) { const i = Math.floor(k / 2); const ang = s.pos / Math.pow(10000, (2 * i) / D); vec.push((k % 2 ? Math.cos(ang) : Math.sin(ang)).toFixed(3)); }
-      b.querySelector(".readout").innerHTML = `Rows = positions 0–49, columns = ${D} dimensions (red = +1, blue = −1).<br>PE(${s.pos}) starts [${vec.join(", ")}, …]<br><span class="muted">Self-attention alone is order-blind (permuting the input permutes the output). Adding PE to the token embeddings injects order. Every position gets a unique pattern, values stay within [−1, 1], and PE(pos + k) is a linear function of PE(pos), which makes relative offsets easy to learn.</span>`;
+      b.querySelector(".readout").innerHTML = R`Rows = positions 0–49, columns = ${D} dimensions (red $= +1$, blue $= -1$).<br>$\text{PE}(${s.pos})$ starts $[${vec.join(", ")}, \ldots]$<br><span class="muted">Self-attention alone is order-blind (shuffle the input and the output just shuffles). Adding PE to the word embeddings puts order back in. Every position gets a unique pattern, values stay between $-1$ and $1$, and $\text{PE}(pos + k)$ is a simple (linear) function of $\text{PE}(pos)$, which makes relative distances easy to learn.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };

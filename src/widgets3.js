@@ -415,4 +415,38 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- Week 9 ---------- */
+
+  /* Text clean-up pipeline */
+  W.textpipe = (el) => {
+    const b = U.box(el, "Clean up a sentence, step by step", "Type any sentence. Each row applies one more step of the course's pipeline. (The lemmatiser here only knows a small dictionary of common words.)");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls"><div class="ctrl" style="grid-column:1/-1"><label>Your sentence</label><input type="text" data-k="s" value="The Quick Brown Foxes are Running!!! Visit https://example.com"></div></div><div class="readout"></div>`);
+    const STOP = new Set("a an the is are was were be been am i me my you your he she it its we they them this that these those and or but of to in on at for with by from as so not no do does did have has had will would can could should visit".split(" "));
+    const LEM = { foxes: "fox", running: "run", ran: "run", runs: "run", studies: "study", studied: "study", children: "child", better: "good", best: "good", mice: "mouse", went: "go", going: "go", cats: "cat", dogs: "dog", movies: "movie", loved: "love", loves: "love", loving: "love", learning: "learn", wolves: "wolf", feet: "foot", geese: "goose", women: "woman", men: "man", people: "person", was: "be", were: "be", is: "be" };
+    const draw = (s) => {
+      const s0 = String(s.s), s1 = s0.toLowerCase(), s2 = s1.replace(/https?:\/\/\S+/g, " ").replace(/[^a-z0-9\s']/g, " ").replace(/\s+/g, " ").trim();
+      const t3 = s2 ? s2.split(" ") : [], t4 = t3.filter((w) => !STOP.has(w)), t5 = t4.map((w) => LEM[w] || w);
+      const tok = (arr) => `<span class="tokens" style="display:inline-flex">${arr.map((w) => `<span class="tok" style="cursor:default">${w.replace(/[<>&]/g, "")}</span>`).join("")}</span>`;
+      const esc = (x) => x.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+      b.querySelector(".readout").innerHTML = `<div class="nomath">1. lowercase: ${esc(s1)}<br>2. remove punctuation and links: ${esc(s2)}<br>3. tokenise: ${tok(t3)}<br>4. remove stop words: ${tok(t4)}<br>5. lemmatise: ${tok(t5)}</div><span class="muted">${t3.length} tokens → ${t5.length} after cleaning.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Vanishing / exploding gradient through time */
+  W.vanish = (el) => {
+    const b = U.box(el, "How a gradient fades (or explodes) through time", "Backpropagation through time multiplies by roughly the same factor once per step. Pick the factor and the number of steps.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("f", "Factor per step", 0.5, 1.2, 0.05, 0.9)}${U.range("n", "Number of steps", 1, 60, 1, 50)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const vals = Array.from({ length: s.n + 1 }, (_, k) => s.f ** k);
+      const lo = -6, hi = 3, p = U.plot({ x0: 0, x1: 60, y0: lo, y1: hi, h: 220 });
+      let g = p.frame([0, 10, 20, 30, 40, 50, 60], [-6, -4, -2, 0, 2], "steps back", "log₁₀ gradient");
+      g += p.line(vals.map((v, k) => (k ? "L" : "M") + p.X(k).toFixed(1) + "," + p.Y(Math.max(lo, Math.min(hi, Math.log10(v)))).toFixed(1)).join(""), s.f < 1 ? "var(--bad)" : s.f > 1 ? "var(--warn)" : "var(--good)");
+      b.querySelector(".plot").innerHTML = p.svg(g);
+      const v = s.f ** s.n;
+      b.querySelector(".readout").innerHTML = R`$${s.f}^{${s.n}} = ${v < 1e-3 || v > 1e4 ? v.toExponential(2).replace(/e([+-]\d+)/, (m, e) => String.raw` \times 10^{${+e}}`) : U.f(v, 4)}$ → ${v < 0.01 ? "<b>vanished</b>: the first words barely affect learning." : v > 50 ? "<b>exploded</b>: training becomes unstable (gradient clipping caps this)." : "still usable."}<br><span class="muted">The LSTM's cell state lets the forget gate sit near 1, so the memory path keeps its gradient.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();
