@@ -221,8 +221,8 @@
       const draw = () => {
         const s = steps[i];
         let body = "";
-        if (s.k === "hook") body = `<span class="eyebrow">Unit ${t.week.n} · ${A.esc(A.strip(t.title))}</span><h2 class="gq">Think first</h2><div class="hook"><div class="hook-q">${t.hook}</div>${revealed ? `<div class="hook-a">${t.reveal}</div>` : ""}</div>`;
-        else if (s.k === "card") { const c = s.c; body = `<span class="eyebrow">Idea ${s.i + 1} of ${t.cards.length}</span><h2 class="gq">${c.h}</h2><div class="prose">${c.b}</div>${c.f ? A.figHTML(c.f) : ""}${c.w ? `<div class="widget-slot" data-w="${c.w}"></div>` : ""}${c.ask ? A.askHTML(c.ask, s.i) : ""}`; }
+        if (s.k === "hook") body = `<span class="eyebrow">Unit ${t.week.n} · ${A.esc(A.strip(t.title))}</span><h2 class="gq">Think first</h2><div class="hook"><div class="hook-q">${t.hook}</div>${revealed ? `<div class="hook-a">${t.reveal}</div>` : ""}</div>${revealed && A.ctxHTML ? A.ctxHTML(t) : ""}`;
+        else if (s.k === "card") { const c = s.c; body = `<span class="eyebrow">Idea ${s.i + 1} of ${t.cards.length}</span><h2 class="gq">${c.h}</h2><div class="prose">${c.b}</div>${A.exHTML ? A.exHTML(c.ex) : ""}${c.f ? A.figHTML(c.f) : ""}${c.w ? `<div class="widget-slot" data-w="${c.w}"></div>` : ""}${c.ask ? A.askHTML(c.ask, s.i) : ""}`; }
         else if (s.k === "act") body = `<span class="eyebrow">New words in this lesson</span>${ACT.html(s.a, false)}`;
         else body = `<span class="eyebrow">Before you practise</span><h2 class="gq">Remember for the exam</h2><ul class="gkeys">${t.keys.map((k) => `<li>${k}</li>`).join("")}</ul><div class="callout warn small"><b>Traps examiners like:</b><ul>${t.traps.map((k) => `<li>${k}</li>`).join("")}</ul></div>`;
         const gates = { ask: s.k === "card" && !!s.c.ask, w: s.k === "card" && !!s.c.w, act: s.k === "act" };
