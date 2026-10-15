@@ -11,7 +11,7 @@ const ctx = { window: {}, console, R: String.raw };
 ctx.window.COURSE = { weeks: [], finals: [], formulas: [], glossary: [] };
 ctx.COURSE = ctx.window.COURSE;
 vm.createContext(ctx);
-const files = ["lectures.js", ...Array.from({ length: 13 }, (_, i) => `content/w${String(i).padStart(2, "0")}.js`), "content/finals.js", "content/formulas.js", "content/glossary.js", "figures.js"];
+const files = ["lectures.js", ...Array.from({ length: 13 }, (_, i) => `content/w${String(i).padStart(2, "0")}.js`), "content/finals.js", "content/formulas.js", "content/glossary.js", "figures.js", ..."abcde".split("").map((g) => `figures-life-${g}.js`)];
 files.forEach((f) => vm.runInContext(fs.readFileSync(path.join(src, f), "utf8"), ctx, { filename: f }));
 const C = ctx.window.COURSE, L = ctx.window.LECTURES, FIGS = ctx.window.FIGS || {};
 const widgetSrc = ["widgets1.js", "widgets2.js", "widgets3.js"].map((f) => fs.readFileSync(path.join(src, f), "utf8")).join("\n");
@@ -70,7 +70,7 @@ function checkQ(q, where, topic) {
   else if (q.r != null && (q.r < 0 || q.r >= t.cards.length)) err(`${where}: card ref ${q.r} out of range (topic ${t.id} has ${t.cards.length})`);
 }
 
-let nq = 0, minutes = 0, types = { mcq: 0, msq: 0, nat: 0 };
+let nEx = 0, nCards = 0, nCtx = 0, nq = 0, minutes = 0, types = { mcq: 0, msq: 0, nat: 0 };
 const tally = (q) => { nq++; types[Array.isArray(q.a) ? "msq" : typeof q.a === "object" ? "nat" : "mcq"]++; };
 C.weeks.forEach((w) => {
   w.topics.forEach((t) => {
@@ -80,7 +80,10 @@ C.weeks.forEach((w) => {
       if (c.w && !widgets.has(c.w)) err(`${t.id} card ${i}: unknown widget ${c.w}`);
       if (c.f) { const n = Array.isArray(c.f) ? c.f[0] : c.f; if (!FIGS[n]) err(`${t.id} card ${i}: unknown figure ${n}`); }
       if (c.ask && (c.ask.a >= c.ask.o.length)) err(`${t.id} card ${i}: ask answer out of range`);
+      if (c.ex) { nEx++; if (!c.ex.h || !c.ex.b) err(`${t.id} card ${i}: example needs h and b`); if (c.ex.f) { const n = Array.isArray(c.ex.f) ? c.ex.f[0] : c.ex.f; if (!FIGS[n]) err(`${t.id} card ${i}: unknown example figure ${n}`); } if (c.ex.s && (!Array.isArray(c.ex.s) || c.ex.s.length < 2 || c.ex.s.length > 5)) err(`${t.id} card ${i}: example strip needs 2-5 steps`); }
+      nCards++;
     });
+    if (t.ctx) nCtx++;
     if (!t.hook || !t.reveal || !t.keys || !t.traps) err(`${t.id}: missing hook/reveal/keys/traps`);
     if (/\$/.test(t.title)) err(`${t.id}: keep maths out of topic titles`);
     t.quiz.forEach((q, i) => { checkQ(q, `${t.id} quiz ${i + 1}`, t); tally(q); });
@@ -98,6 +101,7 @@ const covered = new Set(); C.weeks.forEach((w) => w.topics.forEach((t) => t.lec.
 for (let n = 1; n <= 74; n++) if (!covered.has(n)) err(`lecture ${n} is not mapped to any topic`);
 
 const plan = minutes + C.weeks.length * 10 + 30;
+console.log(`relatable examples ${nEx}/${nCards} cards · context ${nCtx}/${Object.keys(topics).length} topics`);
 console.log(`weeks ${C.weeks.length} · topics ${Object.keys(topics).length} · questions ${nq} (MCQ ${types.mcq}, MSQ ${types.msq}, NAT ${types.nat}) · finals ${C.finals.length} · equations ${nMath} · glossary ${C.glossary.length} · figures ${Object.keys(FIGS).filter((k) => k[0] !== "_").length} · widgets ${widgets.size}`);
 console.log(`planned minutes: topics ${minutes} + tests ${C.weeks.length * 10} + revision 30 = ${plan} (${(plan / 60).toFixed(2)} h)`);
 if (plan !== 960) err(`plan totals ${plan} min, expected 960`);

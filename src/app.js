@@ -441,11 +441,13 @@
           <div class="row" style="margin-top:12px"><button class="btn small" id="reveal">I have a guess — reveal</button><span class="small muted">Commit to an answer first. A guess, even a wrong one, makes the lesson stick.</span></div>
           <div class="hook-a" id="hook-a" hidden>${t.reveal}</div>
         </section>
+        ${ctxHTML(t)}
         <div class="lesson" id="lesson">
           ${t.cards.map((c, i) => `
             <article class="lcard" id="card-${i}">
               <div class="lcard-h"><span class="lcard-n">${String(i + 1).padStart(2, "0")}</span><h2 style="font-size:1.25rem">${c.h}</h2></div>
               <div class="prose">${c.b}</div>
+              ${exHTML(c.ex)}
               ${c.f ? figHTML(c.f) : ""}
               ${c.w ? `<div class="widget-slot" data-w="${c.w}"></div>` : ""}
               ${c.ask ? askHTML(c.ask, i) : ""}
@@ -497,6 +499,13 @@
   }
 
   /* ---------- figures ---------- */
+  // "In real life" box on a card: { i: emoji, h: title, b: html, s: [picture strip steps] }
+  function exHTML(e) {
+    if (!e) return "";
+    const strip = e.s && e.s.length ? `<div class="strip">${e.s.map((x) => `<span>${x}</span>`).join('<i aria-hidden="true">→</i>')}</div>` : "";
+    return `<aside class="life"><div class="life-ic" aria-hidden="true">${e.i || "💡"}</div><div class="life-b"><span class="eyebrow">In real life</span><h4>${e.h}</h4>${strip}<div class="prose">${e.b}</div>${e.f ? figHTML(e.f) : ""}</div></aside>`;
+  }
+  const ctxHTML = (t) => t.ctx ? `<section class="ctxbox"><span class="eyebrow">Why this matters</span><div class="prose">${t.ctx}</div></section>` : "";
   function figHTML(f) {
     const [name, cap] = Array.isArray(f) ? f : [f, ""];
     const fn = (window.FIGS || {})[name];
@@ -1006,7 +1015,7 @@
 
   /* ---------- boot ---------- */
   const GAME = window.GAME ? window.GAME({ S: () => S, save, go, toast, $, $$, esc, strip, shuffle, weeks, flat, topicById, QBANK, MOCKS, WIDGETS,
-    prep, correct, optsHTML, wireOpts, explainHTML, recordMistake, typeLabel, wireJumps, askHTML, wireAsk, figHTML, linkTerms }) : null;
+    prep, correct, optsHTML, wireOpts, explainHTML, recordMistake, typeLabel, wireJumps, askHTML, wireAsk, figHTML, exHTML, ctxHTML, linkTerms }) : null;
   if (GAME) VIEW = { name: "path" };
   shell();
   render();
