@@ -291,4 +291,23 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- Week 6 ---------- */
+
+  /* AdaIN by hand on a 2x2 feature map */
+  W.adain = (el) => {
+    const b = U.box(el, "AdaIN by hand", R`Type a $2 \times 2$ feature map, then choose a style scale $y_s$ and bias $y_b$. AdaIN first wipes the map's own mean and spread, then paints the style on.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls"><div class="ctrl"><label>Feature map (4 numbers)</label><input type="text" data-k="x" value="2, 4, 6, 8"></div>${U.range("ys", R`Style scale $y_s$`, -3, 3, 0.1, 2)}${U.range("yb", R`Style bias $y_b$`, -3, 3, 0.1, 1)}</div><div class="row" style="gap:18px;align-items:flex-start"><div><div class="eyebrow">input</div><div class="g1" style="margin-top:6px"></div></div><div><div class="eyebrow">normalised</div><div class="g2" style="margin-top:6px"></div></div><div><div class="eyebrow">styled</div><div class="g3" style="margin-top:6px"></div></div></div><div class="readout"></div>`);
+    const grid = (m) => `<div class="grid-cells" style="grid-template-columns:repeat(2,52px)">${m.map((v) => `<span style="width:52px">${U.f(v, 2)}</span>`).join("")}</div>`;
+    const draw = (s) => {
+      const x = String(s.x).split(/[,\s]+/).filter(Boolean).map(Number);
+      if (x.length !== 4 || x.some(isNaN)) { b.querySelector(".readout").innerHTML = "Type exactly 4 numbers, separated by commas."; return; }
+      const mu = x.reduce((a, v) => a + v, 0) / 4, sd = Math.sqrt(x.reduce((a, v) => a + (v - mu) ** 2, 0) / 4) || 1e-9;
+      const xn = x.map((v) => (v - mu) / sd), y = xn.map((v) => s.ys * v + s.yb);
+      b.querySelector(".g1").innerHTML = grid(x); b.querySelector(".g2").innerHTML = grid(xn); b.querySelector(".g3").innerHTML = grid(y);
+      const m2 = y.reduce((a, v) => a + v, 0) / 4, s2 = Math.sqrt(y.reduce((a, v) => a + (v - m2) ** 2, 0) / 4);
+      b.querySelector(".readout").innerHTML = R`$\mu = ${U.f(mu, 3)}$, $\sigma = ${U.f(sd, 3)}$ → normalised map has mean 0 and spread 1<br>styled $= ${s.ys} \times \text{normalised} + (${s.yb})$ → its mean is now $${U.f(m2, 2)}$ (= $y_b$) and its spread $${U.f(s2, 2)}$ (= $|y_s|$)<br><span class="muted">Whatever the input's own statistics were, the output's mean and spread are set entirely by the style. That is how $w$ controls each layer.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();

@@ -299,4 +299,40 @@
     g += t(280, 20, "each transposed-conv block doubles height and width, halves depth", "s");
     return svg(560, 230, g, "DCGAN generator shapes");
   };
+
+  /* ---------- Week 6 ---------- */
+  F.cganFig = () => svg(560, 200, `
+    ${box(10, 20, 70, 36, "var(--warn-soft)", W)}${t(45, 43, "noise z")}${box(10, 70, 70, 36, H, INK)}${t(45, 93, "label y")}
+    ${arrow(82, 38, 110, 55)}${arrow(82, 88, 110, 70)}<path d="M112 35 L175 48 L175 78 L112 91Z" fill="${SOFT}" stroke="${A}"/>${t(143, 110, "G(z, y)", "s")}
+    ${arrow(177, 63, 215, 63)}${box(217, 45, 70, 36, SH, B)}${t(252, 68, "fake")}
+    ${box(217, 130, 70, 36, SH, G)}${t(252, 153, "real x")}${box(300, 165, 70, 30, H, INK)}${t(335, 185, "label y", "s")}
+    ${arrow(289, 63, 340, 95)}${arrow(289, 148, 340, 115)}${arrow(335, 163, 355, 125, W)}
+    <path d="M342 75 L410 90 L410 120 L342 135Z" fill="${SOFT}" stroke="${A}"/>${t(376, 150, "D(x, y)", "s")}
+    ${arrow(412, 105, 440, 105)}${box(442, 80, 110, 50, SH, INK)}${t(497, 101, "real AND", "s")}${t(497, 118, "matches y?", "s")}`, "Conditional GAN");
+  F.pix2pixFig = () => {
+    let g = `${box(10, 70, 70, 70, SH, MUTE)}${t(45, 110, "sketch x")}${arrow(82, 105, 102, 105)}`;
+    const ys = [[110, 30, 150], [150, 50, 110], [190, 70, 70]];
+    ys.forEach(([x, y, h]) => (g += `<rect x="${x}" y="${y}" width="28" height="${h}" fill="${SOFT}" stroke="${A}"/>`));
+    [[290, 70, 70], [330, 50, 110], [370, 30, 150]].forEach(([x, y, h]) => (g += `<rect x="${x}" y="${y}" width="28" height="${h}" fill="${SOFT}" stroke="${A}"/>`));
+    g += `<rect x="230" y="85" width="40" height="40" fill="${H}" stroke="${INK}"/>`;
+    g += `<path d="M138 40 L370 40 M178 60 L330 60 M218 80 L290 80" stroke="${H}" stroke-width="3" stroke-dasharray="6 4"/>${t(254, 32, "skip connections", "s")}${t(254, 165, "U-Net generator", "s")}`;
+    g += `${arrow(400, 105, 420, 105)}${box(422, 70, 70, 70, SH, MUTE)}${t(457, 110, "photo G(x)")}`;
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) g += `<rect x="${500 + j * 13}" y="${80 + i * 13}" width="11" height="11" fill="${(i + j) % 3 ? "var(--good-soft)" : "var(--bad-soft)"}" stroke="${RULE}"/>`;
+    g += t(526, 150, "PatchGAN", "s") + t(526, 164, "patch scores", "s");
+    return svg(560, 180, g, "Pix2Pix");
+  };
+  F.cycleFig = () => svg(560, 200, `
+    <circle cx="90" cy="100" r="50" fill="var(--warn-soft)" stroke="${W}"/>${t(90, 96, "horse x", "b")}${t(90, 114, "domain X", "s")}
+    <circle cx="470" cy="100" r="50" fill="${SOFT}" stroke="${A}"/>${t(470, 96, "zebra G(x)", "b")}${t(470, 114, "domain Y", "s")}
+    <path d="M140 80 Q280 20 420 80" fill="none" stroke="${A}" stroke-width="2.5"/>${arrow(410, 76, 422, 82, A)}${t(280, 38, "G: X → Y", "b")}
+    <path d="M420 120 Q280 180 140 120" fill="none" stroke="${W}" stroke-width="2.5"/>${arrow(150, 124, 138, 118, W)}${t(280, 172, "F: Y → X", "b")}
+    ${t(280, 100, "F(G(x)) should equal x", "s")}${t(280, 116, "loss ‖F(G(x)) − x‖₁", "s")}`, "CycleGAN cycle");
+  F.styleganFig = () => {
+    let g = `${box(10, 20, 60, 34, "var(--warn-soft)", W)}${t(40, 42, "z")}${arrow(72, 37, 92, 37)}${box(94, 14, 100, 46, SOFT, A)}${t(144, 34, "mapping", "s")}${t(144, 49, "8 layers", "s")}${arrow(196, 37, 216, 37)}${box(218, 20, 50, 34, H, INK)}${t(243, 42, "w", "b")}`;
+    g += `${box(10, 120, 80, 50, SH, MUTE)}${t(50, 142, "constant", "s")}${t(50, 157, "4×4×512", "s")}`;
+    const xs = [110, 210, 310, 410];
+    ["4×4", "8×8", "…", "1024²"].forEach((lab, i) => { const x = xs[i]; g += `${arrow(x - 18, 145, x - 2, 145)}${box(x, 120, 80, 50, SH, A)}${t(x + 40, 142, "conv + AdaIN", "s")}${t(x + 40, 158, lab, "s")}<line x1="243" y1="56" x2="${x + 40}" y2="118" stroke="${H}" stroke-width="1.5" stroke-dasharray="4 3"/>${t(x + 40, 195, "+ noise", "s")}<line x1="${x + 40}" y1="185" x2="${x + 40}" y2="172" stroke="${MUTE}"/>`; });
+    g += `${arrow(492, 145, 512, 145)}${t(535, 150, "face", "b")}${t(330, 90, "style w steers every layer", "s")}`;
+    return svg(560, 205, g, "StyleGAN");
+  };
 })();

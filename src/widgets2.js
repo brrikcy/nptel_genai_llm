@@ -52,17 +52,17 @@
 
   /* 19. U-Net explorer */
   W.unet = (el) => {
-    const b = U.box(el, "Tour the denoising U-Net", "Click a block to see what it does in a diffusion model.");
+    const b = U.box(el, "Tour the U-Net", "Click a block to see what it does. Pix2Pix uses this shape as its generator; diffusion models (Week 7) use it to predict noise.");
     const blocks = {
-      in: ["Input x_t", "The noisy image at step t, same height × width as the output."],
-      t: ["Time embedding", "t is turned into a sinusoidal embedding, passed through an MLP and added inside every residual block, so one network knows how much noise to expect."],
-      e1: ["Encoder block 1", "Residual conv blocks with GroupNorm; then downsample. Captures edges and fine texture."],
-      e2: ["Encoder block 2", "Fewer pixels, more channels. Captures larger structures."],
-      bn: ["Bottleneck", "Lowest resolution, widest channels. Self-attention here lets distant regions coordinate. In Stable Diffusion, cross-attention to the text embedding enters at these attention layers."],
-      d2: ["Decoder block 2", "Upsample and concatenate the matching encoder features (skip connection)."],
-      d1: ["Decoder block 1", "Upsample back to full resolution, again with a skip connection, so fine detail lost in the bottleneck is restored."],
-      out: ["Output ε̂_θ(x_t, t)", "Predicted noise, same shape as x_t. The training loss is ‖ε − ε̂_θ(x_t, t)‖²."],
-      skip: ["Skip connections", "Copy encoder feature maps straight across to the decoder. This is the defining feature of the U-Net (first proposed for biomedical segmentation; Pix2Pix uses it as its generator too)."]
+      in: ["Input image", R`The noisy image $x_t$ at step $t$, the same height and width as the output.`],
+      t: ["Time embedding", R`The step number $t$ is turned into a list of sine and cosine values, passed through a small network and added inside every block, so one network knows how much noise to expect.`],
+      e1: ["Encoder block 1", "Convolution blocks (with GroupNorm), then shrink the image. Picks up edges and fine texture."],
+      e2: ["Encoder block 2", "Fewer pixels, more channels. Picks up larger shapes."],
+      bn: ["Bottleneck", "Smallest image, most channels. Self-attention here lets distant regions coordinate. In Stable Diffusion, cross-attention to the text prompt enters at these attention layers."],
+      d2: ["Decoder block 2", "Grow the image and join on the matching encoder features (skip connection)."],
+      d1: ["Decoder block 1", "Grow back to full size, again with a skip connection, so fine detail lost in the bottleneck comes back."],
+      out: ["Output noise", R`The predicted noise $\hat{\varepsilon}_\theta(x_t, t)$, the same shape as $x_t$. The training loss is $\|\varepsilon - \hat{\varepsilon}_\theta(x_t, t)\|^2$.`],
+      skip: ["Skip connections", "Copy encoder feature maps straight across to the decoder. This is the defining feature of the U-Net (first designed for medical image segmentation; Pix2Pix uses it as its generator too)."]
     };
     b.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 560 230" class="chart" style="max-width:560px">
       <defs><marker id="ua" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
