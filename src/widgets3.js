@@ -150,7 +150,7 @@
         <line x1="450" y1="100" x2="490" y2="100" stroke="var(--ink-2)" stroke-width="2"/><circle cx="515" cy="100" r="24" fill="${a > 0 ? "var(--good-soft)" : "var(--sheet-2)"}" stroke="var(--ink)"/><text x="515" y="105" text-anchor="middle">${U.f(a, 2)}</text>
         <text x="265" y="160" text-anchor="middle" style="fill:var(--ink-2)">bias ${s.b}</text>`;
       b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 560 190">${g}</svg><div class="legend"><span><i style="background:var(--good)"></i>positive weight</span><span><i style="background:var(--bad)"></i>negative weight</span><span>thicker = bigger</span></div>`;
-      b.querySelector(".readout").innerHTML = R`$z = w_1 x_1 + w_2 x_2 + b = (${s.w1})(${s.x1}) + (${s.w2})(${s.x2}) + (${s.b}) = ${U.f(z, 3)}$<br>$a = ${N[s.f]} = ${U.f(a, 3)}$` + (s.f === "relu" && z < 0 ? "<br>ReLU turned the negative sum into 0: this neuron is silent for these inputs." : "");
+      b.querySelector(".readout").innerHTML = R`$z = w_1 x_1 + w_2 x_2 + b$<br>$\phantom{z} = (${s.w1})(${s.x1}) + (${s.w2})(${s.x2}) + (${s.b}) = ${U.f(z, 3)}$<br>$a = ${N[s.f]} = ${U.f(a, 3)}$` + (s.f === "relu" && z < 0 ? "<br>ReLU turned the negative sum into 0: this neuron is silent for these inputs." : "");
     };
     const st = U.bind(b, draw); draw(st);
   };

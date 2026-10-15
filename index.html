@@ -383,7 +383,7 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 }
 
 /* ---------- math (KaTeX) ---------- */
-.katex { font-size: 1.08em; }
+.katex { font-size: 1.08em; position: relative; } /* keeps the hidden MathML copy inside scroll boxes */
 .mathd { display: block; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 .mathd .katex-display { margin: .4em 0; }
 .opt .katex, .qtext .katex { font-size: 1.05em; }
@@ -413,6 +413,8 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 .gitem[hidden] { display: none; }
 .examfocus { margin-top: 10px; border: 1px solid var(--rule); border-left: 3px solid var(--good); border-radius: 8px; padding: 10px 14px; background: var(--good-soft); }
 .examfocus::before { content: "What the exam asks"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--good); margin-bottom: 2px; }
+/* Long inline formulas scroll inside their own box on narrow screens instead of widening the page. */
+.mathi.long { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: middle; }
 
 </style>
 <noscript><p style="padding:24px">This study system needs JavaScript enabled.</p></noscript>
@@ -1853,7 +1855,7 @@ COURSE.weeks.push({
           <ul><li>$\mu$: the mean (centre). $\sigma^2$: the variance (spread). $\sigma$: the standard deviation.</li><li>About 68% / 95% / 99.7% of values lie within $\mu \pm 1\sigma$ / $2\sigma$ / $3\sigma$.</li><li>The front factor $\frac{1}{\sqrt{2\pi\sigma^2}}$ makes the total probability 1; the $\exp$ part makes the curve fall away from the mean.</li><li><b>Standard Gaussian</b>: $\mathcal{N}(0, 1)$, mean 0 and variance 1.</li></ul>` },
         { h: "Covariance: do two things move together?", b: R`<div class="eq">$$\text{Cov}(X, Y) = \mathbb{E}\big[(X - \mu_X)(Y - \mu_Y)\big]$$</div>
           <ul><li><b>Positive</b>: they rise together (temperature and ice-cream sales).</li><li><b>Negative</b>: one rises as the other falls (temperature and hot-chocolate sales).</li><li><b>About zero</b>: unrelated.</li><li>Population variance divides by $n$; sample variance divides by $n - 1$. The lecture divides by $n$.</li></ul>
-          <div class="steps"><ol><li>Heights $150, 160, 170, 180$ (mean $165$) and weights $50, 55, 65, 72$ (mean $60.5$).</li><li>$\text{Var}(h) = \frac{225 + 25 + 25 + 225}{4} = 125$.</li><li>$\text{Cov}(h, w) = \frac{(-15)(-10.5) + (-5)(-5.5) + (5)(4.5) + (15)(11.5)}{4} = \frac{157.5 + 27.5 + 22.5 + 172.5}{4} = 95$. Positive: they move together.</li></ol></div>`, w: "covar",
+          <div class="steps"><ol><li>Heights $150, 160, 170, 180$ (mean $165$) and weights $50, 55, 65, 72$ (mean $60.5$).</li><li>$\text{Var}(h) = \frac{225 + 25 + 25 + 225}{4} = 125$.</li><li>Multiply the paired distances, add, divide by $n = 4$: $$\text{Cov}(h, w) = \frac{(-15)(-10.5) + (-5)(-5.5) + (5)(4.5) + (15)(11.5)}{4}$$ $$= \frac{157.5 + 27.5 + 22.5 + 172.5}{4} = 95$$ Positive: they move together.</li></ol></div>`, w: "covar",
           ask: { q: R`$\text{Var}(\text{weight})$ for $50, 55, 65, 72$ (divide by $n$, mean $60.5$) is:`, o: ["73.25", "99", "125", "60.5"], a: 0, x: R`Squared distances $110.25, 30.25, 20.25, 132.25$ → sum 293 → $\frac{293}{4} = 73.25$.` } },
         { h: "Many variables at once: the covariance matrix", b: R`<div class="eq">$$\mathcal{N}(\mathbf{x}; \boldsymbol{\mu}, \Sigma), \qquad \mathbf{x}, \boldsymbol{\mu} \in \mathbb{R}^d, \qquad \Sigma \text{ is a } d \times d \text{ covariance matrix}$$</div>
           <ul><li>The <b>diagonal</b> of $\Sigma$ holds each variable's variance; the <b>off-diagonal</b> entries hold the covariances between pairs. $\Sigma$ is symmetric, because $\text{Cov}(X_1, X_2) = \text{Cov}(X_2, X_1)$.</li><li>Height–weight example: $\Sigma = \begin{bmatrix}125 & 95\\ 95 & 73.25\end{bmatrix}$.</li><li>Diffusion uses $\Sigma = \beta I$: $\beta$ on the diagonal, 0 elsewhere. Every pixel gets noise of the same variance $\beta$, and the noise in different pixels is unrelated.</li></ul>` },
@@ -4677,7 +4679,7 @@ Question: ${s.q}</span><br><br><b>3 · Generate</b> → ${none ? "nothing releva
         <line x1="450" y1="100" x2="490" y2="100" stroke="var(--ink-2)" stroke-width="2"/><circle cx="515" cy="100" r="24" fill="${a > 0 ? "var(--good-soft)" : "var(--sheet-2)"}" stroke="var(--ink)"/><text x="515" y="105" text-anchor="middle">${U.f(a, 2)}</text>
         <text x="265" y="160" text-anchor="middle" style="fill:var(--ink-2)">bias ${s.b}</text>`;
       b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 560 190">${g}</svg><div class="legend"><span><i style="background:var(--good)"></i>positive weight</span><span><i style="background:var(--bad)"></i>negative weight</span><span>thicker = bigger</span></div>`;
-      b.querySelector(".readout").innerHTML = R`$z = w_1 x_1 + w_2 x_2 + b = (${s.w1})(${s.x1}) + (${s.w2})(${s.x2}) + (${s.b}) = ${U.f(z, 3)}$<br>$a = ${N[s.f]} = ${U.f(a, 3)}$` + (s.f === "relu" && z < 0 ? "<br>ReLU turned the negative sum into 0: this neuron is silent for these inputs." : "");
+      b.querySelector(".readout").innerHTML = R`$z = w_1 x_1 + w_2 x_2 + b$<br>$\phantom{z} = (${s.w1})(${s.x1}) + (${s.w2})(${s.x2}) + (${s.b}) = ${U.f(z, 3)}$<br>$a = ${N[s.f]} = ${U.f(a, 3)}$` + (s.f === "relu" && z < 0 ? "<br>ReLU turned the negative sum into 0: this neuron is silent for these inputs." : "");
     };
     const st = U.bind(b, draw); draw(st);
   };
@@ -5146,7 +5148,7 @@ Question: ${s.q}</span><br><br><b>3 · Generate</b> → ${none ? "nothing releva
         if (m[0] === "\\$") frag.appendChild(document.createTextNode("$"));
         else {
           const span = document.createElement("span");
-          span.className = m[1] != null ? "mathd" : "mathi";
+          span.className = m[1] != null ? "mathd" : m[2].length > 70 ? "mathi long" : "mathi";
           span.innerHTML = tex(m[1] != null ? m[1] : m[2], m[1] != null);
           frag.appendChild(span);
         }

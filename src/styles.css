@@ -368,7 +368,7 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 }
 
 /* ---------- math (KaTeX) ---------- */
-.katex { font-size: 1.08em; }
+.katex { font-size: 1.08em; position: relative; } /* keeps the hidden MathML copy inside scroll boxes */
 .mathd { display: block; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 .mathd .katex-display { margin: .4em 0; }
 .opt .katex, .qtext .katex { font-size: 1.05em; }
@@ -398,3 +398,5 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 .gitem[hidden] { display: none; }
 .examfocus { margin-top: 10px; border: 1px solid var(--rule); border-left: 3px solid var(--good); border-radius: 8px; padding: 10px 14px; background: var(--good-soft); }
 .examfocus::before { content: "What the exam asks"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--good); margin-bottom: 2px; }
+/* Long inline formulas scroll inside their own box on narrow screens instead of widening the page. */
+.mathi.long { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: middle; }
