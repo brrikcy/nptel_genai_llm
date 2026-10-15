@@ -35,11 +35,26 @@ const FILE = "file://" + path.join(__dirname, "..", "index.html");
         else document.querySelector(`.opt[data-i="${right ? q.a : (q.a + 1) % q.o.length}"]`).click();
         return { right };
       },
+      solveAct() {
+        const box = document.querySelector(".aact"); if (!box) return false;
+        const right = rnd() < SKILL, kind = box.dataset.act;
+        if (kind === "match") {
+          const ks = [...box.querySelectorAll('.achip[data-side="L"]')].map((b) => b.dataset.k);
+          if (!right && ks.length > 1) { box.querySelector(`.achip[data-side="L"][data-k="${ks[0]}"]`).click(); box.querySelector(`.achip[data-side="R"][data-k="${ks[1]}"]`).click(); }
+          ks.forEach((k) => { box.querySelector(`.achip[data-side="L"][data-k="${k}"]`).click(); box.querySelector(`.achip[data-side="R"][data-k="${k}"]`).click(); });
+        } else if (kind === "blank") {
+          const pick = right ? box.querySelector('.achip[data-ok="1"]') : box.querySelector('.achip[data-ok="0"]'); pick.click();
+        } else {
+          const n = box.querySelectorAll(".aorder-pool .achip").length; const ord = [...Array(n).keys()]; if (!right) [ord[0], ord[1]] = [ord[1], ord[0]];
+          ord.forEach((i) => document.querySelector(`.aact .aorder-pool .achip[data-pos="${i}"]`).click());
+        }
+        return { right, kind };
+      },
       state() { const g = window.__GENAI.S().game || {}; const L = window.__GENAI.GAME.levels; return { done: L.filter(window.__GENAI.GAME.isDone).length, total: L.length, xp: g.xp, gems: g.gems, hearts: g.hearts, streak: g.streak }; },
     };
   }, { SKILL, SEED });
 
-  const stats = { lessons: 0, practice: 0, checkpoints: 0, checkFails: 0, outOfHearts: 0, reviews: 0, mocks: [], answered: 0, missing: [], gating: [] };
+  const stats = { activities: 0, lessons: 0, practice: 0, checkpoints: 0, checkFails: 0, outOfHearts: 0, reviews: 0, mocks: [], answered: 0, missing: [], gating: [] };
   const has = (sel) => page.$(sel).then(Boolean);
   const click = async (sel) => { await page.click(sel); await page.waitForTimeout(25); };
 
@@ -50,6 +65,7 @@ const FILE = "file://" + path.join(__dirname, "..", "index.html");
 
   async function playSession() {
     for (let guard = 0; guard < 400; guard++) {
+      if (await has(".aact") && !(await has("#gcont"))) { await page.evaluate(() => window.__SIM.solveAct()); stats.activities++; await page.waitForTimeout(420); if (await has("#gcheck")) await click("#gcheck"); await click("#gcont"); continue; }
       if (await has("#gcheck")) { const a = await page.evaluate(() => window.__SIM.answer()); if (a.missing) { stats.missing.push(a.missing); return "missing"; } stats.answered++; await click("#gcheck"); await click("#gcont"); continue; }
       if (await has("[data-a=review]")) { stats.outOfHearts++; await click("[data-a=review]"); stats.reviews++; continue; }
       if (await has("[data-a=retry]")) { stats.checkFails++; await click("[data-a=retry]"); continue; }
@@ -70,6 +86,8 @@ const FILE = "file://" + path.join(__dirname, "..", "index.html");
     if (kind === "learn") {
       for (let g = 0; g < 40; g++) {
         const ask = await page.$(".ask:not(.done) .opts button:not([disabled])");
+        await page.evaluate(() => { const sl = document.querySelector(".widget-slot"); if (sl) sl.click(); });
+        if (await has(".aact")) { await page.evaluate(() => window.__SIM.solveAct()); stats.activities++; await page.waitForTimeout(420); }
         if (ask) await page.evaluate(() => { const box = document.querySelector(".ask"); box.querySelectorAll(".opts button")[+box.dataset.a].click(); box.classList.add("done"); });
         await click("#gnext");
         if (await has("#gpath")) { await click("#gpath"); stats.lessons++; break; }

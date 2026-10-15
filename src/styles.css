@@ -478,3 +478,25 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 @media (prefers-reduced-motion: reduce) { .gconfetti { display: none; } }
 body.gfocus .rail, body.gfocus .menu-btn { display: none; }
 body.gfocus .shell { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- game layer: activities ---------- */
+.aact { display: flex; flex-direction: column; gap: 14px; }
+.achip { border: 2px solid var(--rule); border-bottom-width: 4px; border-radius: 12px; background: var(--sheet); padding: 10px 14px; cursor: pointer; text-align: left; font-size: .95rem; line-height: 1.35; transition: transform .06s; }
+.achip:active { transform: translateY(2px); }
+.achip.sel { border-color: #1cb0f6; background: color-mix(in srgb, #1cb0f6 12%, var(--sheet)); }
+.achip.ok { border-color: #58cc02; background: var(--good-soft); color: var(--good); opacity: .75; cursor: default; }
+.achip.no { border-color: #ff4b4b; background: var(--bad-soft); animation: gshake .35s; }
+.achip:disabled { cursor: default; }
+.amatch { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 12px; }
+.acol { display: flex; flex-direction: column; gap: 10px; }
+.achip.term { font-weight: 700; text-align: center; }
+.achip.def { font-size: .86rem; }
+.ablank-s { font-size: 1.1rem; line-height: 2; }
+.ablank { display: inline-block; min-width: 90px; border-bottom: 3px solid var(--ink-2); padding: 0 6px; text-align: center; font-weight: 700; }
+.ablank.filled { border-color: #1cb0f6; color: #1590c9; } .ablank.ok { border-color: #58cc02; color: var(--good); } .ablank.no { border-color: #ff4b4b; color: var(--bad); }
+.abank, .aorder-pool { display: flex; flex-wrap: wrap; gap: 10px; }
+.aorder-ans { min-height: 64px; border: 2px dashed var(--rule); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.aorder-pool { flex-direction: column; }
+.achip.step b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #1cb0f6; color: #fff; font-size: .75rem; margin-right: 8px; }
+.achip.placed { border-color: #1cb0f6; }
+@media (max-width: 560px) { .amatch { grid-template-columns: minmax(0, 1fr); } }

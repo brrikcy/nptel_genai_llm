@@ -215,24 +215,31 @@
     function viewLearn(main, tid) {
       daily();
       const t = A.topicById[tid], l = byId["L:" + tid];
-      const steps = [{ k: "hook" }].concat(t.cards.map((c, i) => ({ k: "card", c, i })), [{ k: "keys" }]);
+      const am = ACT.forTopic(t).match;
+      const steps = [{ k: "hook" }].concat(t.cards.map((c, i) => ({ k: "card", c, i })), am ? [{ k: "act", a: ACT.fresh(am) }] : [], [{ k: "keys" }]);
       let i = 0, revealed = false;
       const draw = () => {
         const s = steps[i];
         let body = "";
         if (s.k === "hook") body = `<span class="eyebrow">Unit ${t.week.n} · ${A.esc(A.strip(t.title))}</span><h2 class="gq">Think first</h2><div class="hook"><div class="hook-q">${t.hook}</div>${revealed ? `<div class="hook-a">${t.reveal}</div>` : ""}</div>`;
         else if (s.k === "card") { const c = s.c; body = `<span class="eyebrow">Idea ${s.i + 1} of ${t.cards.length}</span><h2 class="gq">${c.h}</h2><div class="prose">${c.b}</div>${c.f ? A.figHTML(c.f) : ""}${c.w ? `<div class="widget-slot" data-w="${c.w}"></div>` : ""}${c.ask ? A.askHTML(c.ask, s.i) : ""}`; }
+        else if (s.k === "act") body = `<span class="eyebrow">New words in this lesson</span>${ACT.html(s.a, false)}`;
         else body = `<span class="eyebrow">Before you practise</span><h2 class="gq">Remember for the exam</h2><ul class="gkeys">${t.keys.map((k) => `<li>${k}</li>`).join("")}</ul><div class="callout warn small"><b>Traps examiners like:</b><ul>${t.traps.map((k) => `<li>${k}</li>`).join("")}</ul></div>`;
-        const needAsk = s.k === "card" && s.c.ask;
+        const gates = { ask: s.k === "card" && !!s.c.ask, w: s.k === "card" && !!s.c.w, act: s.k === "act" };
+        const hint = () => [gates.w && "try the interactive model", gates.ask && "answer the quick check", gates.act && "match every pair"].filter(Boolean).join(" and ");
+        const needAsk = gates.ask || gates.w || gates.act;
         const btn = s.k === "hook" && !revealed ? `<button class="btn gbtn" id="gnext">I have a guess. Reveal</button>` : `<button class="btn gbtn" id="gnext" ${needAsk ? "disabled" : ""}>${i === steps.length - 1 ? "Finish lesson" : "Continue"}</button>`;
         main.innerHTML = `<div class="gsession">${chrome((i + (revealed || s.k !== "hook" ? 1 : 0)) / (steps.length + 1), `<span class="small muted gcount">${i + 1}/${steps.length}</span>`)}
           <div class="gbody">${body}</div>
-          <div class="gfoot"><div class="gfoot-in">${needAsk ? `<span class="small muted">Answer the quick check to continue</span>` : `<span></span>`}${btn}</div></div></div>`;
+          <div class="gfoot"><div class="gfoot-in">${needAsk ? `<span class="small muted ghint">To continue: ${hint()}</span>` : `<span></span>`}${btn}</div></div></div>`;
         wireQuit(main);
         if (window.renderMath) window.renderMath(main);
         A.linkTerms($$(".gbody .prose, .gbody .hook, .gkeys", main));
         $$(".widget-slot", main).forEach((slot) => { const f = A.WIDGETS[slot.dataset.w]; if (f) { try { f(slot); } catch (e) { slot.innerHTML = '<p class="small muted">Interactive model failed to load.</p>'; } } });
-        $$(".ask", main).forEach((box) => { A.wireAsk(box); $$(".opts button", box).forEach((b) => b.addEventListener("click", () => { const ok = +b.dataset.j === +box.dataset.a; beep(ok ? "ok" : "bad"); $("#gnext").disabled = false; })); });
+        $$(".ask", main).forEach((box) => { A.wireAsk(box); $$(".opts button", box).forEach((b) => b.addEventListener("click", () => { const ok = +b.dataset.j === +box.dataset.a; beep(ok ? "ok" : "bad"); gates.ask = false; open(); })); });
+        $$(".widget-slot", main).forEach((sl) => ["input", "click"].forEach((ev) => sl.addEventListener(ev, () => { if (gates.w) { gates.w = false; open(); } })));
+        if (s.k === "act") ACT.wire(main, s.a, () => {}, () => { gates.act = false; beep("win"); open(); });
+        function open() { const h = $(".ghint", main); if (h) h.textContent = hint() ? "To continue: " + hint() : ""; $("#gnext").disabled = !!hint(); }
         $("#gnext").onclick = () => {
           if (s.k === "hook" && !revealed) { revealed = true; draw(); return; }
           if (i < steps.length - 1) { i++; draw(); scrollTo(0, 0); return; }
@@ -244,21 +251,154 @@
       draw();
     }
 
+    /* ---------- interactive activities (built from each topic's own content) ----------
+       match: tap a term, then its meaning (word bank)   blank: fill the gap in an exam key point with a word chip
+       order: put a worked example's steps, or a pipeline (A → B → C), in the right order */
+    const ACT = (() => {
+      const hash = (s) => { let h = 7; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+      const plain = (s) => A.strip(String(s)).replace(/\s+/g, " ").trim();
+      const evenMath = (s) => ((String(s).match(/\$/g) || []).length % 2 === 0);
+      const rx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const STOP = new Set("because between through without another however whether therefore whereas different another important example examples usually actually exactly".split(" "));
+      const mix = (arr, seed) => A.shuffle(arr, seed);
+      const topicText = (t) => plain([t.hook, t.reveal].concat(t.cards.map((c) => c.h + " " + c.b), t.keys).join(" ")).toLowerCase();
+      const cache = {};
+
+      function match(t) {
+        const text = topicText(t), out = [];
+        (window.COURSE.glossary || []).forEach(([term, def, al]) => {
+          const names = [term].concat(al || []).filter((n) => n.length > 2);
+          let hits = 0; names.forEach((n) => { const m = text.match(new RegExp("\\b" + rx(n.toLowerCase()) + "\\b", "g")); hits += m ? m.length : 0; });
+          if (!hits) return;
+          let d = plain(def); const m = d.match(/^(.{20,150}?[.!?])(\s|$)/); d = m ? m[1] : d;
+          if (d.length > 170 || !evenMath(d) || out.some((o) => o.term.toLowerCase() === term.toLowerCase())) return;
+          out.push({ term, def: d, hits });
+        });
+        out.sort((a, b) => b.hits - a.hits || hash(t.id + a.term) - hash(t.id + b.term));
+        const pairs = out.slice(0, 4);
+        return pairs.length >= 3 ? { act: "match", id: "am:" + t.id, pairs } : null;
+      }
+
+      function blank(t) {
+        const week = t.week, cands = [], typ = (w) => (/^\d/.test(w) ? "num" : "word");
+        const gl = new Set((window.COURSE.glossary || []).flatMap(([term, , al]) => [term].concat(al || [])).map((x) => x.toLowerCase()));
+        const scan = (k, owner) => {
+          const segs = String(k).split(/(\$\$[\s\S]+?\$\$|\$[^$]+\$|<[^>]+>)/);
+          segs.forEach((sg, si) => {
+            if (si % 2) return;
+            const re = /\b([A-Za-z][A-Za-z-]{5,}|\d+(?:\.\d+)?%?)\b/g; let m;
+            while ((m = re.exec(sg))) { const w = m[1]; if (STOP.has(w.toLowerCase())) continue; cands.push({ owner, k, si, idx: m.index, w, type: typ(w), score: typ(w) === "num" ? 3 : gl.has(w.toLowerCase()) ? 3 : w.length >= 8 ? 2 : 1 }); }
+          });
+        };
+        week.topics.forEach((tt) => tt.keys.forEach((k) => scan(k, tt.id)));
+        const mine = cands.filter((c) => c.owner === t.id).sort((a, b) => b.score - a.score || hash(t.id + a.w + a.idx) - hash(t.id + b.w + b.idx));
+        for (const c of mine) {
+          const same = [...new Set(cands.filter((o) => o.type === c.type && o.w.toLowerCase() !== c.w.toLowerCase() && !String(c.k).toLowerCase().includes(o.w.toLowerCase())).map((o) => o.w))];
+          let opts = same.sort((a, b) => Math.abs(a.length - c.w.length) - Math.abs(b.length - c.w.length) || hash(a) - hash(b)).slice(0, 3);
+          if (c.type === "num" && opts.length < 3) { const v = parseFloat(c.w), pct = c.w.endsWith("%") ? "%" : ""; [v * 2, v / 2, v + (v >= 10 ? 10 : 1)].forEach((x) => { const s = String(+x.toFixed(4)) + pct; if (opts.length < 3 && s !== c.w && !opts.includes(s)) opts.push(s); }); }
+          if (opts.length < 3) continue;
+          const cap = /^[A-Z]/.test(c.w) && !/^[A-Z]{2}/.test(c.w);
+          opts = opts.map((o) => (/^[A-Z]{2}/.test(o) || /^\d/.test(o) ? o : cap ? o[0].toUpperCase() + o.slice(1) : o[0].toLowerCase() + o.slice(1)));
+          if (new Set(opts.concat(c.w)).size < 4) continue;
+          const segs = String(c.k).split(/(\$\$[\s\S]+?\$\$|\$[^$]+\$|<[^>]+>)/);
+          const pre = segs.slice(0, c.si).join("") + segs[c.si].slice(0, c.idx), post = segs[c.si].slice(c.idx + c.w.length) + segs.slice(c.si + 1).join("");
+          if (!evenMath(pre) || !evenMath(post)) continue;
+          return { act: "blank", id: "ab:" + t.id, pre, post, answer: c.w, opts: opts.concat(c.w) };
+        }
+        return null;
+      }
+
+      function order(t) {
+        for (const c of t.cards) {
+          const m = String(c.b).match(/<div class="steps"><ol>([\s\S]*?)<\/ol>/);
+          if (!m) continue;
+          const li = [...m[1].matchAll(/<li>([\s\S]*?)<\/li>/g)].map((x) => x[1].trim());
+          const pre = {}; li.forEach((x) => { const k = A.strip(x).slice(0, 4); pre[k] = (pre[k] || 0) + 1; });
+          const parallel = Math.max(...Object.values(pre)) >= Math.max(2, li.length / 2);
+          if (!parallel && li.length >= 3 && li.length <= 6 && li.every((x) => x.length < 260 && evenMath(x)) && new Set(li).size === li.length) return { act: "order", id: "ao:" + t.id, title: "Put the worked example in order", sub: c.h, steps: li };
+        }
+        for (const k of t.keys) {
+          const s = A.strip(String(k)); if (!evenMath(s)) continue;
+          const chain = s.replace(/\$[^$]*\$/g, (x) => x.replace(/→/g, "\u0000")).split(/[.;]\s/).find((x) => (x.match(/→/g) || []).length >= 2);
+          if (!chain) continue;
+          const body = chain.includes(":") ? chain.slice(chain.indexOf(":") + 1) : chain;
+          const items = body.split("→").map((x) => x.replace(/\u0000/g, "→").trim().replace(/\.$/, "")).filter(Boolean);
+          if (items.length >= 3 && items.length <= 7 && new Set(items).size === items.length && items.every((x) => x.length < 60 && evenMath(x))) return { act: "order", id: "ao:" + t.id, title: "Put the steps in order", sub: chain.includes(":") ? chain.slice(0, chain.indexOf(":")) : "", steps: items };
+        }
+        return null;
+      }
+
+      function fresh(a) {
+        const seed = Date.now() % 1e9 + hash(a.id);
+        const b = Object.assign({}, a);
+        if (a.act === "match") { const ix = a.pairs.map((_, i) => i); b.st = { L: mix(ix, seed), R: mix(ix, seed + 1), done: new Set(), sel: null, wrong: 0 }; }
+        else if (a.act === "blank") b.st = { opts: mix(a.opts, seed), pick: null };
+        else { let o = mix(a.steps.map((_, i) => i), seed); if (o.every((v, i) => v === i)) o = o.reverse(); b.st = { pool: o, seq: [] }; }
+        return b;
+      }
+      const forTopic = (t) => { if (!cache[t.id]) cache[t.id] = { match: match(t), blank: blank(t), order: order(t) }; return cache[t.id]; };
+
+      function inner(a, checked, ok) {
+        const st = a.st;
+        if (a.act === "match") return `<span class="qtype">Match the pairs</span><div class="gq">Tap a term, then its meaning</div>
+          <div class="amatch"><div class="acol">${st.L.map((k) => `<button type="button" class="achip term ${st.done.has(k) ? "ok" : ""}" data-side="L" data-k="${k}" ${st.done.has(k) || checked ? "disabled" : ""}>${a.pairs[k].term}</button>`).join("")}</div>
+          <div class="acol">${st.R.map((k) => `<button type="button" class="achip def ${st.done.has(k) ? "ok" : ""}" data-side="R" data-k="${k}" ${st.done.has(k) || checked ? "disabled" : ""}>${a.pairs[k].def}</button>`).join("")}</div></div>`;
+        if (a.act === "blank") return `<span class="qtype">Fill the blank</span><div class="gq">Complete the exam key point</div>
+          <div class="ablank-s">${a.pre}<span class="ablank ${checked ? (ok ? "ok" : "no") : st.pick ? "filled" : ""}">${st.pick || "&nbsp;"}</span>${a.post}</div>
+          <div class="abank">${st.opts.map((w) => `<button type="button" class="achip ${st.pick === w ? "sel" : ""}" data-w="${A.esc(w)}" data-ok="${w === a.answer ? 1 : 0}" ${checked ? "disabled" : ""}>${A.esc(w)}</button>`).join("")}</div>`;
+        return `<span class="qtype">${a.title}</span>${a.sub ? `<div class="gq">${a.sub}</div>` : ""}
+          <div class="aorder-ans">${st.seq.length ? st.seq.map((i, n) => `<button type="button" class="achip step placed" data-i="${i}" ${checked ? "disabled" : ""}><b>${n + 1}</b>${a.steps[i]}</button>`).join("") : '<span class="small muted">Tap the steps below in order</span>'}</div>
+          <div class="aorder-pool">${st.pool.filter((i) => !st.seq.includes(i)).map((i) => `<button type="button" class="achip step" data-i="${i}" data-pos="${i}" ${checked ? "disabled" : ""}>${a.steps[i]}</button>`).join("")}</div>`;
+      }
+      const html = (a, checked, ok) => `<div class="aact" data-act="${a.act}">${inner(a, checked, ok)}</div>`;
+
+      /* onReady(bool) enables Check; onAuto() fires when a match board is finished */
+      function wire(root, a, onReady, onAuto) {
+        const box = $(".aact", root); const st = a.st;
+        const rerender = () => { box.innerHTML = inner(a, false); if (window.renderMath) window.renderMath(box); bind(); };
+        const bind = () => {
+          if (a.act === "match") {
+            $$(".achip", box).forEach((b) => (b.onclick = () => {
+              const side = b.dataset.side, k = +b.dataset.k;
+              if (!st.sel || st.sel.side === side) { $$(".achip.sel", box).forEach((x) => x.classList.remove("sel")); st.sel = { side, k }; b.classList.add("sel"); return; }
+              const other = $(`.achip[data-side="${st.sel.side}"][data-k="${st.sel.k}"]`, box);
+              if (st.sel.k === k) { st.done.add(k); [b, other].forEach((x) => { x.classList.remove("sel"); x.classList.add("ok"); x.disabled = true; }); beep("ok"); st.sel = null; if (st.done.size === a.pairs.length) setTimeout(onAuto, 350); }
+              else { st.wrong++; [b, other].forEach((x) => { x.classList.remove("sel"); x.classList.add("no"); setTimeout(() => x.classList.remove("no"), 500); }); beep("bad"); st.sel = null; }
+            }));
+          } else if (a.act === "blank") {
+            $$(".achip", box).forEach((b) => (b.onclick = () => { st.pick = b.dataset.w; rerender(); onReady(true); }));
+          } else {
+            $$(".aorder-pool .achip", box).forEach((b) => (b.onclick = () => { st.seq.push(+b.dataset.i); rerender(); onReady(st.seq.length === a.steps.length); }));
+            $$(".aorder-ans .achip", box).forEach((b) => (b.onclick = () => { st.seq = st.seq.filter((i) => i !== +b.dataset.i); rerender(); onReady(false); }));
+          }
+        };
+        bind();
+      }
+      const correct = (a) => (a.act === "match" ? a.st.wrong === 0 : a.act === "blank" ? a.st.pick === a.answer : a.st.seq.every((v, i) => v === i));
+      const fb = (a, ok) => {
+        if (a.act === "match") return `<div class="explain ${ok ? "good" : "bad"}"><b class="v">${ok ? "All matched, first time." : "Matched, with " + a.st.wrong + " slip" + (a.st.wrong > 1 ? "s" : "") + "."}</b><div>${ok ? "These words will keep coming up. Tap any underlined word in a lesson to see its meaning again." : "It comes back at the end. Read each pair once more:"}</div>${ok ? "" : `<ul>${a.pairs.map((p) => `<li><b>${p.term}</b>: ${p.def}</li>`).join("")}</ul>`}</div>`;
+        if (a.act === "blank") return `<div class="explain ${ok ? "good" : "bad"}"><b class="v">${ok ? "Correct." : "Not this time."}</b><div>${a.pre}<b>${A.esc(a.answer)}</b>${a.post}</div></div>`;
+        return `<div class="explain ${ok ? "good" : "bad"}"><b class="v">${ok ? "Right order." : "Here is the right order:"}</b>${ok ? "" : `<ol>${a.steps.map((s) => `<li>${s}</li>`).join("")}</ol>`}</div>`;
+      };
+      return { forTopic, fresh, html, wire, correct, fb };
+    })();
+
     /* ---------- question session (practice, checkpoint, review) ---------- */
     function viewPlay(main, lid) {
       daily();
       const l = byId[lid];
       if (!l) return A.go("path");
-      if (l.kind === "practice") session(main, { l, qs: l.t.quiz, mode: "practice", title: l.t.title });
+      if (l.kind === "practice") { const a = ACT.forTopic(l.t); session(main, { l, qs: l.t.quiz, mode: "practice", title: l.t.title, acts: [a.blank, a.order].filter(Boolean) }); }
       else session(main, { l, qs: l.w.test, mode: "check", title: `Unit ${l.w.n} checkpoint` });
     }
-    function viewReview(main) { daily(); const qs = reviewSet(10); if (!qs.length) return A.go("path"); session(main, { l: null, qs, mode: "review", title: "Review" }); }
+    function viewReview(main) { daily(); const qs = reviewSet(10); if (!qs.length) return A.go("path"); const tt = A.topicById[(qs.find((q) => A.topicById[q.t]) || {}).t]; const ra = tt && ACT.forTopic(tt); session(main, { l: null, qs, mode: "review", title: "Review", acts: ra ? [ra.match || ra.blank].filter(Boolean) : [] }); }
 
-    function session(main, { l, qs, mode, title }) {
+    function session(main, { l, qs, mode, title, acts }) {
       const g = G();
       if (mode !== "review" && g.hearts <= 0) return outOfHearts(main, l);
       const seed = Date.now() % 1e9;
       let queue = A.shuffle(qs, seed).map((q, i) => A.prep(q, seed + i));
+      (acts || []).forEach((a, i) => queue.splice(Math.min(queue.length, 1 + i * 3), 0, ACT.fresh(a)));
       const total = queue.length, seen = new Set(), firstWrong = new Set();
       let mastered = 0, firstRight = 0, combo = 0, maxCombo = 0, answer = null, checked = false, ok = false;
       const t0 = Date.now();
@@ -266,22 +406,23 @@
         const p = queue[0];
         main.innerHTML = `<div class="gsession">${chrome(mastered / total, mode === "review" ? `<span class="gstat heart">${ICON.heart}<b>${G().hearts}</b></span>` : `<span class="gstat heart ${checked && !ok ? "hit" : ""}">${ICON.heart}<b>${G().hearts}</b></span>`)}
           <div class="gbody">${combo >= 3 && !checked ? `<span class="gcombo">${combo} in a row</span>` : ""}<span class="eyebrow">${mode === "check" ? "Checkpoint · first try counts" : mode === "review" ? "Review" : seen.has(p.id) ? "Try again" : "Practice"} · ${A.esc(A.strip(title))}</span>
-            <span class="qtype" style="display:block;margin-top:6px">${A.typeLabel(p)}</span><div class="qtext gq">${p.src.q}</div>${A.optsHTML(p, answer, checked)}</div>
-          <div class="gfoot ${checked ? (ok ? "good" : "bad") : ""}"><div class="gfoot-in">${checked ? `<div class="gfb">${A.explainHTML(p, ok)}</div><button class="btn gbtn" id="gcont">Continue</button>` : `<span></span><button class="btn gbtn" id="gcheck" disabled>Check</button>`}</div></div></div>`;
+            ${p.act ? ACT.html(p, checked, ok) : `<span class="qtype" style="display:block;margin-top:6px">${A.typeLabel(p)}</span><div class="qtext gq">${p.src.q}</div>${A.optsHTML(p, answer, checked)}`}</div>
+          <div class="gfoot ${checked ? (ok ? "good" : "bad") : ""}"><div class="gfoot-in">${checked ? `<div class="gfb">${p.act ? ACT.fb(p, ok) : A.explainHTML(p, ok)}</div><button class="btn gbtn" id="gcont">Continue</button>` : (p.act === "match" ? `<span class="small muted">Tap a term, then its meaning</span><span></span>` : `<span></span><button class="btn gbtn" id="gcheck" disabled>Check</button>`)}</div></div></div>`;
         wireQuit(main); A.wireJumps(main);
         if (window.renderMath) window.renderMath(main);
-        if (!checked) A.wireOpts(main, p, (v) => { answer = v; $("#gcheck").disabled = v == null || v === "" || (Array.isArray(v) && !v.length); });
-        const c = $("#gcheck"); if (c) c.onclick = () => {
-          ok = A.correct(p, answer); checked = true;
+        if (!checked) { if (p.act) ACT.wire(main, p, (r) => { const b = $("#gcheck"); if (b) b.disabled = !r; }, () => doCheck()); else A.wireOpts(main, p, (v) => { answer = v; $("#gcheck").disabled = v == null || v === "" || (Array.isArray(v) && !v.length); }); }
+        const doCheck = () => {
+          ok = p.act ? ACT.correct(p) : A.correct(p, answer); checked = true;
           const first = !seen.has(p.id); seen.add(p.id);
-          A.recordMistake(p.id, ok); srsAnswer(p.id, ok && first);
+          if (!p.act) { A.recordMistake(p.id, ok); srsAnswer(p.id, ok && first); }
           if (ok) { if (first) firstRight++; mastered += mode === "practice" || first ? 1 : 0; combo++; maxCombo = Math.max(maxCombo, combo); const gq = G().q; gq.combo = Math.max(gq.combo, combo); questTick(); if (mode === "review" && G().hearts < MAX_HEARTS) G().hearts++; beep("ok"); }
           else { combo = 0; if (first) firstWrong.add(p.id); if (mode !== "review" && first) G().hearts = Math.max(0, G().hearts - 1); if (mode !== "practice") mastered++; beep("bad"); }
           A.save(); draw();
         };
+        const c = $("#gcheck"); if (c) c.onclick = doCheck;
         const n = $("#gcont"); if (n) n.onclick = () => {
           const p0 = queue.shift();
-          if (!ok && mode === "practice") queue.push(A.prep(p0.src, Date.now() % 1e9));
+          if (!ok && mode === "practice") queue.push(p0.act ? ACT.fresh(p0) : A.prep(p0.src, Date.now() % 1e9));
           answer = null; checked = false; ok = false;
           if (mode !== "review" && G().hearts <= 0 && queue.length) return outOfHearts(main, l);
           if (!queue.length) return finish();
@@ -343,7 +484,7 @@
     return {
       views: { path: viewPath, learn: viewLearn, play: viewPlay, review: viewReview },
       ctx: (name, arg) => (name === "learn" ? "topic:" + arg : name === "play" && String(arg).startsWith("P:") ? "quiz:" + arg.slice(2) : name === "play" ? "test:" + String(arg).slice(2) : null),
-      levels: LV, isDone, statBar,
+      levels: LV, isDone, statBar, acts: ACT,
     };
   };
 })();

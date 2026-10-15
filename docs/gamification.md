@@ -19,6 +19,19 @@ The app now opens on a **learning path**, a single winding road of levels like D
 | **Spaced repetition** (Duolingo's half-life regression model) | Reviewing just before you would forget makes memory last | Every question you answer goes into a Leitner box and comes back after 1, 2, 4, 8 or 16 days. A miss sends it back to the start. The **Practice hub** serves the due questions. |
 | **Checkpoints / unit tests** | Prove a whole unit before moving on | Each unit's section test is a checkpoint. It needs **80% on the first try**. If you miss, you are sent to practise the topics you missed, then retry. |
 
+## Hands-on activities, not just reading and multiple choice
+
+Duolingo mixes many exercise types (match the pairs, tap the word bank, put words in order) so you *use* what you learn instead of only recognising it. The app does the same. It builds three activity types automatically from each topic's own content, so every topic has them:
+
+| Activity | Built from | Where it appears | Coverage |
+|---|---|---|---|
+| **Match the pairs**: tap a term, then its meaning | The word bank terms that appear in the topic | The end of every lesson (to continue you must match all pairs), and inside reviews | 53 / 53 topics |
+| **Fill the blank**: tap the missing word or number in an exam key point | The topic's "Remember for the exam" lines. Distractors are similar words or numbers from the same unit. | Every practice session | 53 / 53 topics |
+| **Put in order**: tap steps into the right sequence | The topic's worked example, or a pipeline like Conv → ReLU → Pool → Flatten | Practice sessions | 34 / 53 topics |
+| **Use the model** | The 57 interactive models (sliders, toggles, step-throughs) | Lessons: a card with a model will not continue until you have tried it | Every model |
+
+In Practice these work exactly like questions: a wrong answer costs a heart (first miss only) and comes back at the end, and the level is mastered only when every item is right.
+
 ## Mechanics left out, on purpose
 
 - **Leagues and leaderboards.** These need other real learners. Simulated rivals would be fake, and research on gamification misuse found that competition can push learners toward chasing points instead of learning ([Arxiv 2203.16175](https://arxiv.org/pdf/2203.16175)).
