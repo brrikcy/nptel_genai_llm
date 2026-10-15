@@ -57,7 +57,7 @@
         if (m[0] === "\\$") frag.appendChild(document.createTextNode("$"));
         else {
           const span = document.createElement("span");
-          span.className = m[1] != null ? "mathd" : m[2].length > 70 ? "mathi long" : "mathi";
+          span.className = m[1] != null ? "mathd" : m[2].length > 70 || (m[2].match(/,/g) || []).length >= 4 ? "mathi long" : "mathi";
           span.innerHTML = tex(m[1] != null ? m[1] : m[2], m[1] != null);
           frag.appendChild(span);
         }
