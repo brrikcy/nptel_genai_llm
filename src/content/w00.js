@@ -137,7 +137,7 @@ COURSE.weeks.push({
         { h: "The chain rule: how blame flows backwards", b: R`<p>A network is a chain of steps: input → layer 1 → layer 2 → loss. To know how a weight in layer 1 affects the loss, multiply the slopes along the chain:</p>
           <div class="eq">$$\frac{dL}{dw} = \frac{dL}{dz_2} \times \frac{dz_2}{dz_1} \times \frac{dz_1}{dw}$$</div>
           <div class="analogy">If the price of petrol rises ₹2 per day and each rupee adds 3 rupees to a bus ticket, the ticket rises by $2 \times 3 = 6$ rupees per day.</div>
-          <p>Computing these products from the loss back to the first layer is called <b>backpropagation</b>. One consequence you will meet in Week 1: if many of those slopes are small (less than 1), their product becomes tiny and early layers barely learn. That is the <b>vanishing gradient</b> problem.</p>`,
+          <p>Computing these products from the loss back to the first layer is called <b>backpropagation</b>. One consequence you will meet in Week 1: if many of those slopes are small (less than 1), their product becomes tiny and early layers barely learn. That is the <b>vanishing gradient</b> problem.</p>`, w: "chainrule",
           ask: { q: R`Ten slopes of 0.25 are multiplied along a chain. The result is about:`, o: ["2.5", "0.000001", "0.25", "1"], a: 1, x: R`$0.25^{10} \approx 9.5 \times 10^{-7}$: the gradient has vanished.` } }
       ],
       keys: [R`Derivative $\frac{dL}{dw}$ = slope of the loss at the current weight.`, R`Gradient descent: $w \leftarrow w - \eta \cdot \text{slope}$.`, R`$\eta$ too small = slow; too large = overshoot or diverge.`, R`Gradient $\nabla L$ = list of slopes, one per weight.`, R`Chain rule multiplies slopes; backpropagation applies it from the loss backwards.`],

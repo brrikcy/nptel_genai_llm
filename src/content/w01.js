@@ -85,7 +85,7 @@ COURSE.weeks.push({
           <div class="eq">$$\text{MSE} = \frac{1}{n}\sum_{i=1}^{n} (y_i - \hat{y}_i)^2 \qquad \text{MAE} = \frac{1}{n}\sum_{i=1}^{n} |y_i - \hat{y}_i|$$</div>
           <div class="eq">$$\text{BCE} = -\frac{1}{n}\sum_{i=1}^{n} \Big[ y_i \log \hat{y}_i + (1 - y_i)\log(1 - \hat{y}_i) \Big]$$</div>
           <div class="eq">$$\text{Categorical CE} = -\sum_{k} y_k \log \hat{y}_k$$<span class="eqnote">With a one-hot label only the true class's term survives: the loss is $-\log(\text{probability given to the right answer})$.</span></div>
-          <div class="steps"><ol><li>MSE of $y = [1, 2, 3]$ vs $\hat{y} = [1, 3, 5]$: errors $0, 1, 2$; squares $0, 1, 4$; mean $\frac{5}{3} = 1.667$.</li><li>BCE with $y = 1$, $\hat{y} = 0.8$: $-\ln 0.8 = 0.223$.</li><li>BCE with $y = 1$, $\hat{y} = 0.1$: $-\ln 0.1 = 2.303$. Being confidently wrong is punished hard.</li></ol></div>` },
+          <div class="steps"><ol><li>MSE of $y = [1, 2, 3]$ vs $\hat{y} = [1, 3, 5]$: errors $0, 1, 2$; squares $0, 1, 4$; mean $\frac{5}{3} = 1.667$.</li><li>BCE with $y = 1$, $\hat{y} = 0.8$: $-\ln 0.8 = 0.223$.</li><li>BCE with $y = 1$, $\hat{y} = 0.1$: $-\ln 0.1 = 2.303$. Being confidently wrong is punished hard.</li></ol></div>`, w: "lossexplorer" },
         { h: "Which activation lives where, and the losses of this course", b: R`<div class="tablewrap"><table><tr><th>Activation</th><th>Where the course uses it</th></tr>
           <tr><td>ReLU, Leaky ReLU, PReLU, ELU</td><td>Hidden layers of CNNs, autoencoders, VAEs, GANs</td></tr>
           <tr><td>GELU (and GeGLU)</td><td>Transformers and LLMs</td></tr>

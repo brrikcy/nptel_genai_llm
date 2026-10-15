@@ -515,6 +515,9 @@ body.gfocus .shell { grid-template-columns: minmax(0, 1fr); }
 .achip.step b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #1cb0f6; color: #fff; font-size: .75rem; margin-right: 8px; }
 .achip.placed { border-color: #1cb0f6; }
 @media (max-width: 560px) { .amatch { grid-template-columns: minmax(0, 1fr); } }
+.tug { display: flex; gap: 4px; margin-top: 6px; font: 600 .78rem var(--f-mono); }
+.tug span { padding: 6px 8px; border-radius: 6px; color: #fff; white-space: nowrap; overflow: hidden; min-width: 0; }
+.tug span:first-child { background: var(--good); } .tug span:last-child { background: var(--bad); }
 
 </style>
 <noscript><p style="padding:24px">This study system needs JavaScript enabled.</p></noscript>
@@ -746,7 +749,7 @@ COURSE.weeks.push({
         { h: "The chain rule: how blame flows backwards", b: R`<p>A network is a chain of steps: input → layer 1 → layer 2 → loss. To know how a weight in layer 1 affects the loss, multiply the slopes along the chain:</p>
           <div class="eq">$$\frac{dL}{dw} = \frac{dL}{dz_2} \times \frac{dz_2}{dz_1} \times \frac{dz_1}{dw}$$</div>
           <div class="analogy">If the price of petrol rises ₹2 per day and each rupee adds 3 rupees to a bus ticket, the ticket rises by $2 \times 3 = 6$ rupees per day.</div>
-          <p>Computing these products from the loss back to the first layer is called <b>backpropagation</b>. One consequence you will meet in Week 1: if many of those slopes are small (less than 1), their product becomes tiny and early layers barely learn. That is the <b>vanishing gradient</b> problem.</p>`,
+          <p>Computing these products from the loss back to the first layer is called <b>backpropagation</b>. One consequence you will meet in Week 1: if many of those slopes are small (less than 1), their product becomes tiny and early layers barely learn. That is the <b>vanishing gradient</b> problem.</p>`, w: "chainrule",
           ask: { q: R`Ten slopes of 0.25 are multiplied along a chain. The result is about:`, o: ["2.5", "0.000001", "0.25", "1"], a: 1, x: R`$0.25^{10} \approx 9.5 \times 10^{-7}$: the gradient has vanished.` } }
       ],
       keys: [R`Derivative $\frac{dL}{dw}$ = slope of the loss at the current weight.`, R`Gradient descent: $w \leftarrow w - \eta \cdot \text{slope}$.`, R`$\eta$ too small = slow; too large = overshoot or diverge.`, R`Gradient $\nabla L$ = list of slopes, one per weight.`, R`Chain rule multiplies slopes; backpropagation applies it from the loss backwards.`],
@@ -900,7 +903,7 @@ COURSE.weeks.push({
           <div class="eq">$$\text{MSE} = \frac{1}{n}\sum_{i=1}^{n} (y_i - \hat{y}_i)^2 \qquad \text{MAE} = \frac{1}{n}\sum_{i=1}^{n} |y_i - \hat{y}_i|$$</div>
           <div class="eq">$$\text{BCE} = -\frac{1}{n}\sum_{i=1}^{n} \Big[ y_i \log \hat{y}_i + (1 - y_i)\log(1 - \hat{y}_i) \Big]$$</div>
           <div class="eq">$$\text{Categorical CE} = -\sum_{k} y_k \log \hat{y}_k$$<span class="eqnote">With a one-hot label only the true class's term survives: the loss is $-\log(\text{probability given to the right answer})$.</span></div>
-          <div class="steps"><ol><li>MSE of $y = [1, 2, 3]$ vs $\hat{y} = [1, 3, 5]$: errors $0, 1, 2$; squares $0, 1, 4$; mean $\frac{5}{3} = 1.667$.</li><li>BCE with $y = 1$, $\hat{y} = 0.8$: $-\ln 0.8 = 0.223$.</li><li>BCE with $y = 1$, $\hat{y} = 0.1$: $-\ln 0.1 = 2.303$. Being confidently wrong is punished hard.</li></ol></div>` },
+          <div class="steps"><ol><li>MSE of $y = [1, 2, 3]$ vs $\hat{y} = [1, 3, 5]$: errors $0, 1, 2$; squares $0, 1, 4$; mean $\frac{5}{3} = 1.667$.</li><li>BCE with $y = 1$, $\hat{y} = 0.8$: $-\ln 0.8 = 0.223$.</li><li>BCE with $y = 1$, $\hat{y} = 0.1$: $-\ln 0.1 = 2.303$. Being confidently wrong is punished hard.</li></ol></div>`, w: "lossexplorer" },
         { h: "Which activation lives where, and the losses of this course", b: R`<div class="tablewrap"><table><tr><th>Activation</th><th>Where the course uses it</th></tr>
           <tr><td>ReLU, Leaky ReLU, PReLU, ELU</td><td>Hidden layers of CNNs, autoencoders, VAEs, GANs</td></tr>
           <tr><td>GELU (and GeGLU)</td><td>Transformers and LLMs</td></tr>
@@ -1362,7 +1365,7 @@ COURSE.weeks.push({
           <div class="eq">$$L_{\text{VAE}} = \text{Reconstruction loss (MSE or BCE)} + D_{\mathrm{KL}}\big(q_\phi(z \mid x) \,\|\, \mathcal{N}(0, I)\big)$$</div>
           <div class="eq">$$D_{\mathrm{KL}} = \frac{1}{2}\sum_{j} \left(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1\right)$$<span class="eqnote">The ready-made formula when $q$ is a Gaussian with diagonal spread and the prior is $\mathcal{N}(0, I)$.</span></div>
           <ul><li>The reconstruction term makes codes informative.</li><li>The KL term pulls every cloud towards $\mathcal{N}(0, I)$, giving a smooth, continuous space you can sample from. Too strong a pull and you get <b>posterior collapse</b>: the decoder ignores $z$ and outputs blurry averages.</li><li>To <b>generate</b>: sample $z \sim \mathcal{N}(0, I)$ and run only the decoder.</li></ul>
-          <div class="steps"><ol><li>One latent dimension, $\mu = 1$, $\log\sigma^2 = 0$, so $\sigma^2 = 1$.</li><li>$\frac{1}{2}(1^2 + 1 - 0 - 1) = 0.5$.</li></ol></div><div class="examfocus">Know the two parts by name (reconstruction + KL) and what each one pushes for. Be ready to plug numbers into $\frac{1}{2}\sum_j(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1)$. You will not be asked to derive the ELBO.</div>`, w: "vaeloss" }
+          <div class="steps"><ol><li>One latent dimension, $\mu = 1$, $\log\sigma^2 = 0$, so $\sigma^2 = 1$.</li><li>$\frac{1}{2}(1^2 + 1 - 0 - 1) = 0.5$.</li></ol></div><div class="examfocus">Know the two parts by name (reconstruction + KL) and what each one pushes for. Be ready to plug numbers into $\frac{1}{2}\sum_j(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1)$. You will not be asked to derive the ELBO.</div>`, w: "elbogap" }
       ],
       keys: [R`Prior $p(z) = \mathcal{N}(0, I)$; encoder $q_\phi(z \mid x) = \mathcal{N}(\mu, \mathrm{diag}\,\sigma^2)$ approximates the intractable posterior $p(z \mid x)$.`, R`Encoder heads $\mu$ and $\log\sigma^2$ have no activation; $\sigma^2 = e^{\log\sigma^2}$, $\sigma = e^{\frac{1}{2}\log\sigma^2}$.`, R`$\text{ELBO} = \mathbb{E}_q[\log p(x \mid z)] - D_{\mathrm{KL}}(q(z \mid x) \,\|\, p(z)) \le \log p(x)$; the gap is $D_{\mathrm{KL}}(q(z \mid x) \,\|\, p(z \mid x))$.`, R`$L_{\text{VAE}} = \text{reconstruction} + \frac{1}{2}\sum_j(\mu_j^2 + \sigma_j^2 - \log\sigma_j^2 - 1)$.`, R`Generate by sampling $z \sim \mathcal{N}(0, I)$ and running only the decoder.`],
       traps: [R`You MAXIMISE the ELBO, which means MINIMISING the loss $= -\text{ELBO}$.`, R`The KL in the loss is to the prior $p(z)$, not to the true posterior.`, R`The KL term is zero only when $\mu = 0$ and $\sigma^2 = 1$ in every dimension.`],
@@ -1394,7 +1397,7 @@ COURSE.weeks.push({
         { h: "How the gradient reaches the encoder", b: R`<ul><li>The decoder side is easy: $\hat{x} = g_\theta(z)$, so ordinary backprop gives $\frac{\partial L}{\partial \theta}$, and also $\frac{\partial L}{\partial z} = \frac{\partial L}{\partial \hat{x}} \cdot \frac{\partial \hat{x}}{\partial z}$.</li><li>With $z = \mu + \sigma\varepsilon$ and $\varepsilon$ treated as a fixed number during backprop, the chain rule (Week 0) continues:</li></ul>
           <div class="eq">$$\frac{\partial L}{\partial \mu} = \frac{\partial L}{\partial z} \cdot 1 \qquad \frac{\partial L}{\partial \sigma} = \frac{\partial L}{\partial z} \cdot \varepsilon$$</div>
           <p>Then the gradients flow on into the encoder weights: $L \to \hat{x} \to z \to (\mu, \sigma) \to \phi$.</p>
-          <div class="steps"><ol><li>$\frac{\partial L}{\partial z} = 2$, $\varepsilon = -0.5$.</li><li>$\frac{\partial L}{\partial \mu} = 2 \times 1 = 2$; $\frac{\partial L}{\partial \sigma} = 2 \times (-0.5) = -1$.</li></ol></div>` }
+          <div class="steps"><ol><li>$\frac{\partial L}{\partial z} = 2$, $\varepsilon = -0.5$.</li><li>$\frac{\partial L}{\partial \mu} = 2 \times 1 = 2$; $\frac{\partial L}{\partial \sigma} = 2 \times (-0.5) = -1$.</li></ol></div>`, w: "chainrule" }
       ],
       keys: [R`Sampling blocks gradients; the fix is $z = \mu + \sigma \odot \varepsilon$ with $\varepsilon \sim \mathcal{N}(0, I)$.`, R`$\varepsilon$ depends on no weights; $\mu$ and $\sigma$ sit on a differentiable path.`, R`$\sigma = e^{\frac{1}{2}\log\sigma^2}$, $\sigma^2 = e^{\log\sigma^2}$.`, R`$\frac{\partial z}{\partial \mu} = 1$, $\frac{\partial z}{\partial \sigma} = \varepsilon$.`, R`The same input gives different $z$ for different $\varepsilon$.`],
       traps: [R`Add $\sigma\varepsilon$, not $\sigma^2\varepsilon$.`, R`$\varepsilon$ comes from the standard normal $\mathcal{N}(0, 1)$, not from $\mathcal{N}(\mu, \sigma^2)$.`, "The trick is used during training, not only at generation time."],
@@ -1766,7 +1769,7 @@ COURSE.weeks.push({
           <p>The <b>conditional GAN</b> (Mirza and Osindero, 2014) gives the label $y$ to <b>both</b> networks:</p>
           <ul><li>Generator: $G(z, y)$, joining $z$ and $y$ (or a learned “label embedding”).</li><li>Discriminator: $D(x, y)$, the image together with $y$ (e.g. as extra channels).</li></ul>
           <div class="tablewrap"><table><tr><th>Plain GAN</th><th>Conditional GAN</th></tr><tr><td>$G(z)$: output depends only on noise</td><td>$G(z, y)$: noise and label</td></tr><tr><td>$D(x)$: is $x$ real?</td><td>$D(x, y)$: is $x$ real <b>and</b> does it match $y$?</td></tr><tr><td>No control</td><td>Controlled generation</td></tr></table></div>
-          <p>$z$ is still needed: it gives <b>variety</b> within a class (many different-looking 5s).</p>`, f: ["cganFig", "In a conditional GAN, the label y goes into both the generator and the discriminator."] },
+          <p>$z$ is still needed: it gives <b>variety</b> within a class (many different-looking 5s).</p>`, f: ["cganFig", "In a conditional GAN, the label y goes into both the generator and the discriminator."] , w: "cgan" },
         { h: "Training loop and losses (Lecture 38)", b: R`<ol><li>Pick a real image $x$ and its label $y$; D sees $D(x, y)$.</li><li>Sample $z$ and give G the same $y$: $x_{\text{fake}} = G(z, y)$.</li><li>Train D: push $D(x, y) \to 1$ and $D(G(z, y), y) \to 0$. D learns both “is it real?” and “does it match $y$?”.</li><li>Train G: push $D(G(z, y), y) \to 1$, i.e. realistic and matching $y$.</li><li>Repeat.</li></ol>
           <div class="eq">$$\min_G \max_D \; \mathbb{E}\big[\log D(x \mid y)\big] + \mathbb{E}\big[\log\big(1 - D(G(z \mid y) \mid y)\big)\big]$$</div>
           <div class="eq">$$L_D = -\mathbb{E}\big[\log D(x \mid y)\big] - \mathbb{E}\big[\log\big(1 - D(G(z, y), y)\big)\big]$$</div>
@@ -2018,7 +2021,7 @@ COURSE.weeks.push({
           <p>Problem: when generating, $x_0$ is exactly what we do not have. Trick: turn the shortcut formula around, $x_0 = \frac{x_t - \sqrt{1 - \bar{\alpha}_t}\,\varepsilon}{\sqrt{\bar{\alpha}_t}}$, and substitute. Everything tidies up to a formula needing only $x_t$ and the noise:</p>
           <div class="eq">$$\tilde{\mu}_t = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\varepsilon\right)$$</div>
           <p>Finally replace the true $\varepsilon$ by the network's guess $\varepsilon_\theta(x_t, t)$. So the network only has to <b>guess the noise</b>.</p>
-          <div class="steps"><ol><li>$\bar{\alpha}_{t-1} = 0.9$, $\bar{\alpha}_t = 0.8$, $\beta_t = 0.1111$.</li><li>$\tilde{\beta}_t = \frac{1 - 0.9}{1 - 0.8} \times 0.1111 = \frac{0.1}{0.2} \times 0.1111 = 0.0556$.</li></ol></div><div class="examfocus">You will not have to derive $\tilde{\mu}_t$. Expect to: compute $\tilde{\beta}_t$ from given numbers, compute $\hat{x}_0 = \frac{x_t - \sqrt{1 - \bar{\alpha}_t}\,\hat{\varepsilon}}{\sqrt{\bar{\alpha}_t}}$, and know that the network predicts the noise.</div>` },
+          <div class="steps"><ol><li>$\bar{\alpha}_{t-1} = 0.9$, $\bar{\alpha}_t = 0.8$, $\beta_t = 0.1111$.</li><li>$\tilde{\beta}_t = \frac{1 - 0.9}{1 - 0.8} \times 0.1111 = \frac{0.1}{0.2} \times 0.1111 = 0.0556$.</li></ol></div><div class="examfocus">You will not have to derive $\tilde{\mu}_t$. Expect to: compute $\tilde{\beta}_t$ from given numbers, compute $\hat{x}_0 = \frac{x_t - \sqrt{1 - \bar{\alpha}_t}\,\hat{\varepsilon}}{\sqrt{\bar{\alpha}_t}}$, and know that the network predicts the noise.</div>`, w: "posterior" },
         { h: "The training loss: guess the noise", b: R`<div class="eq">$$L_{\text{simple}} = \mathbb{E}_{t,\, x_0,\, \varepsilon}\Big\|\, \varepsilon - \varepsilon_\theta\big(\sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon,\ t\big)\Big\|^2$$</div>
           <p>In words: make a noisy image with known noise, ask the network to guess that noise, and penalise the squared error (MSE). It comes from the ELBO (Week 3): each step's KL between two Gaussians boils down to an MSE between their means, which becomes an MSE on the noise. Ho et al. (2020) simply drop the weighting factors.</p>
           <p>One network handles every $t$, so it must be <b>told $t$</b> (a time embedding, see the U-Net next week).</p>`, f: ["ddpmLoops", "Training (left) jumps to a random step and learns to guess the noise. Generation (right) starts from noise and removes a little at every step."] },
@@ -2635,7 +2638,7 @@ COURSE.weeks.push({
           ask: { q: R`$d = k = 1024$, $r = 8$. LoRA trainable parameters for that matrix?`, o: ["8,192", "16,384", "1,048,576", "2,048"], a: 1, x: R`$r(d + k) = 8 \times 2048 = 16{,}384$, versus $1{,}048{,}576$ for the full matrix.` } },
         { h: "The lecture's numbers", b: R`<div class="eq">$$W = W_0 + \alpha\, \Delta W = W_0 + \alpha\, BA, \qquad W_0 \in \mathbb{R}^{D \times d}, \quad B \in \mathbb{R}^{D \times r}, \quad A \in \mathbb{R}^{r \times d}$$</div>
           <div class="steps"><ol><li>Slide example: $D = 1024$, $d = 128$, $r = 8$.</li><li>Full update: $D \cdot d = 131{,}072$. LoRA: $r(D + d) = 8 \times 1152 = 9{,}216$.</li><li>Fraction $= \frac{9216}{131072} = 0.0703$: only about <b>7%</b> of the parameters are trained.</li></ol></div>
-          <p><b>Tutorial (Lecture 69)</b>: one $768 \times 768$ matrix with $r = 8$ trains $8 \times (768 + 768) = 12{,}288$ parameters instead of $589{,}824$ (about 2%). With Hugging Face PEFT on <b>flan-t5-small</b>: $344{,}064$ trainable out of $77{,}305{,}216$, i.e. <b>0.445%</b>. Padding positions in the labels are set to <b>$-100$</b> so the cross-entropy loss ignores them.</p>`,
+          <p><b>Tutorial (Lecture 69)</b>: one $768 \times 768$ matrix with $r = 8$ trains $8 \times (768 + 768) = 12{,}288$ parameters instead of $589{,}824$ (about 2%). With Hugging Face PEFT on <b>flan-t5-small</b>: $344{,}064$ trainable out of $77{,}305{,}216$, i.e. <b>0.445%</b>. Padding positions in the labels are set to <b>$-100$</b> so the cross-entropy loss ignores them.</p>`, w: "lowrank",
           ask: { q: R`Why are padded label positions set to $-100$ in the tutorial?`, o: ["To mark the end of the sentence", "So the cross-entropy loss ignores them", "To scale the LoRA update", "To mask attention heads"], a: 1, x: R`$-100$ is PyTorch cross-entropy's “ignore” value.` } },
         { h: "QLoRA", b: R`<ul><li><b>Quantise</b> the frozen base model to <b>4 bits</b> per weight (instead of 16 or 32) using the NF4 (“NormalFloat-4”) format, with double quantisation and paged optimizers to save more memory.</li><li>Train LoRA adapters in higher precision on top.</li><li>Result: fine-tune a 65-billion-parameter model on a single 48 GB GPU with almost full-precision quality.</li></ul>
           <div class="analogy">Quantising is like saving a photo with fewer colours: much smaller, and still recognisable.</div>` }
@@ -5183,6 +5186,151 @@ Question: ${s.q}</span><br><br><b>3 · Generate</b> → ${none ? "nothing releva
       b.querySelector(".readout").innerHTML = R`<div>Selection rate: $P(\hat{y} = 1 \mid A) = ${f2(A.rate)}$, $P(\hat{y} = 1 \mid B) = ${f2(B.rate)}$ → demographic parity ${ok(dp)} (gap ${f2(dp)}).</div>
         <div>True-positive rate (qualified people selected): A $= ${f2(A.tpr)}$, B $= ${f2(B.tpr)}$ → equal opportunity ${ok(eo)} (gap ${f2(eo)}).</div>
         <div class="muted small">Try: set the bias to 0 and both cut-offs equal, and both rules hold. With bias, lowering group B's cut-off can repair one rule, but it may not repair both at once. Choosing which rule to satisfy is a value judgement.</div>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* ---------- explainers for the hardest ideas ---------- */
+
+  /* Chain rule on a live computation graph (neuron), and the VAE path with / without the reparameterisation trick */
+  W.chainrule = (el) => {
+    const b = U.box(el, "Follow the gradient backwards", "Forward pass (black) computes each value left to right. Backward pass (red) multiplies the local slopes right to left: that product is the chain rule, and it is all backpropagation does. Press “Take a step” and watch the loss fall.");
+    b.insertAdjacentHTML("beforeend", `${U.seg("m", [["n", "A neuron"], ["v", "VAE with the trick"], ["s", "VAE without the trick"]], "n")}<div class="ctrls cr-ctrls"></div><div class="plot"></div><div class="row"><button class="btn small" data-act="step">Take a step (η = 0.5)</button></div><div class="readout"></div>`);
+    const P = { x: 1.5, w: -0.8, bb: 0.2, y: 1, mu: 0.4, sg: 0.8, ep: 0.6, wd: 1.2, xt: 2 };
+    let st = { m: "n" };
+    const sig = (z) => 1 / (1 + Math.exp(-z));
+    const node = (x, y, label, val, col) => `<rect x="${x - 46}" y="${y - 22}" width="92" height="44" rx="10" fill="var(--sheet)" stroke="${col || "var(--accent)"}" stroke-width="2"/><text x="${x}" y="${y - 3}" text-anchor="middle" style="fill:var(--ink);font-weight:700">${label}</text><text x="${x}" y="${y + 14}" text-anchor="middle">${val}</text>`;
+    const edge = (x1, x2, y, g, broken) => `<line x1="${x1 + 46}" y1="${y}" x2="${x2 - 48}" y2="${y}" stroke="var(--ink-2)" stroke-width="2" ${broken ? 'stroke-dasharray="5 5"' : ""}/><text x="${(x1 + x2) / 2}" y="${y + 38}" text-anchor="middle" style="fill:${broken ? "var(--ink-2)" : "var(--bad)"};font-weight:700">${broken ? "✗ no slope" : "← " + g}</text>`;
+    const ctrls = () => {
+      const c = b.querySelector(".cr-ctrls");
+      c.innerHTML = st.m === "n" ? U.range("x", "Input x", -2, 2, 0.1, P.x) + U.range("w", "Weight w", -3, 3, 0.05, P.w) + U.range("y", "Target y", 0, 1, 1, P.y)
+        : U.range("mu", R`Encoder mean $\mu$`, -2, 2, 0.05, P.mu) + U.range("sg", R`Encoder spread $\sigma$`, 0.1, 2, 0.05, P.sg) + U.range("ep", R`Noise draw $\varepsilon$`, -2, 2, 0.1, P.ep) + U.range("xt", "Target x", -3, 3, 0.1, P.xt);
+      c.querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { P[inp.dataset.k] = +inp.value; c.querySelector(`[data-o="${inp.dataset.k}"]`).textContent = inp.value; draw(); }));
+    };
+    const draw = () => {
+      let g = "", txt = "";
+      if (st.m === "n") {
+        const z = P.w * P.x + P.bb, a = sig(z), L = (a - P.y) ** 2, dLa = 2 * (a - P.y), daz = a * (1 - a), dzw = P.x, dLw = dLa * daz * dzw;
+        g = node(60, 50, "w", U.f(P.w, 2)) + edge(60, 200, 50, `∂z/∂w = x = ${U.f(dzw, 2)}`) + node(200, 50, "z = wx + b", U.f(z, 3)) + edge(200, 340, 50, `∂a/∂z = ${U.f(daz, 3)}`) + node(340, 50, "a = σ(z)", U.f(a, 3)) + edge(340, 480, 50, `∂L/∂a = ${U.f(dLa, 3)}`) + node(480, 50, "L = (a − y)²", U.f(L, 4), "var(--bad)");
+        txt = R`$\frac{\partial L}{\partial w} = \frac{\partial L}{\partial a}\cdot\frac{\partial a}{\partial z}\cdot\frac{\partial z}{\partial w} = (${U.f(dLa, 3)})(${U.f(daz, 3)})(${U.f(dzw, 2)}) = ${U.f(dLw, 4)}$` + `<br><span class="muted">The sign says which way to move w: ${dLw > 0 ? "positive, so decrease w" : dLw < 0 ? "negative, so increase w" : "zero: already at the bottom"}. Gradient descent: $w \\leftarrow w - \\eta \\cdot ${U.f(dLw, 4)}$.</span>`;
+        st.grad = dLw;
+      } else {
+        const z = P.mu + P.sg * P.ep, xh = P.wd * z, L = (xh - P.xt) ** 2, dLx = 2 * (xh - P.xt), dxz = P.wd, dLz = dLx * dxz, dLmu = dLz, dLsg = dLz * P.ep, broken = st.m === "s";
+        g = node(60, 30, "μ", U.f(P.mu, 2)) + node(60, 110, "σ", U.f(P.sg, 2)) + `<line x1="106" y1="30" x2="150" y2="62" stroke="var(--ink-2)" stroke-width="2" ${broken ? 'stroke-dasharray="5 5"' : ""}/><line x1="106" y1="110" x2="150" y2="78" stroke="var(--ink-2)" stroke-width="2" ${broken ? 'stroke-dasharray="5 5"' : ""}/>` +
+          node(200, 70, broken ? "z ~ N(μ, σ²)" : "z = μ + σε", U.f(z, 3), broken ? "var(--warn)" : "var(--accent)") + edge(200, 340, 70, `∂x̂/∂z = ${U.f(dxz, 2)}`) + node(340, 70, "x̂ = w·z", U.f(xh, 3)) + edge(340, 480, 70, `∂L/∂x̂ = ${U.f(dLx, 3)}`) + node(480, 70, "L = (x̂ − x)²", U.f(L, 4), "var(--bad)") +
+          `<text x="150" y="${broken ? 140 : 145}" style="fill:${broken ? "var(--bad)" : "var(--good)"};font-weight:700">${broken ? "✗ a random draw has no slope" : `ε = ${U.f(P.ep, 2)} is just a number on the path`}</text>`;
+        txt = broken ? R`Sampling $z$ directly is like rolling a die: there is no formula for “how much would $z$ change if $\mu$ moved a bit”, so the gradient stops at $z$ and the encoder never learns. Switch to “with the trick”.`
+          : R`$\frac{\partial L}{\partial \mu} = \frac{\partial L}{\partial \hat{x}}\cdot\frac{\partial \hat{x}}{\partial z}\cdot 1 = ${U.f(dLmu, 3)}$, $\quad \frac{\partial L}{\partial \sigma} = \frac{\partial L}{\partial \hat{x}}\cdot\frac{\partial \hat{x}}{\partial z}\cdot \varepsilon = ${U.f(dLsg, 3)}$` + `<br><span class="muted">Because $z = \\mu + \\sigma\\varepsilon$ is an ordinary formula, the gradient flows all the way back to the encoder's outputs.</span>`;
+        st.grad = broken ? null : [dLmu, dLsg];
+      }
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 540 ${st.m === "n" ? 100 : 155}">${g}</svg>`;
+      b.querySelector(".readout").innerHTML = txt;
+      b.querySelector('[data-act="step"]').disabled = st.m === "s";
+    };
+    b.querySelector('[data-act="step"]').onclick = () => {
+      if (st.m === "n") P.w = Math.max(-3, Math.min(3, +(P.w - 0.5 * st.grad).toFixed(3)));
+      else if (st.grad) { P.mu = Math.max(-2, Math.min(2, +(P.mu - 0.5 * st.grad[0]).toFixed(3))); P.sg = Math.max(0.1, Math.min(2, +(P.sg - 0.5 * st.grad[1]).toFixed(3))); }
+      ctrls(); draw();
+    };
+    b.querySelector('[data-seg="m"]').addEventListener("click", (e) => { const t = e.target.closest("button"); if (!t) return; b.querySelectorAll('[data-seg="m"] button').forEach((x) => x.classList.toggle("on", x === t)); st.m = t.dataset.v; ctrls(); draw(); });
+    ctrls(); draw();
+  };
+
+  /* Why confident wrong answers cost so much: BCE vs MSE */
+  W.lossexplorer = (el) => {
+    const b = U.box(el, "Loss explorer: how much does a mistake cost?", "Pick the true answer, then drag the model's predicted probability. Compare cross-entropy (the log loss) with squared error.");
+    b.insertAdjacentHTML("beforeend", `${U.seg("y", [["1", "True answer: YES (y = 1)"], ["0", "True answer: NO (y = 0)"]], "1")}<div class="ctrls">${U.range("p", R`Model's prediction $\hat{y}$`, 0.01, 0.99, 0.01, 0.3)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const y = +s.y, bce = (p) => -(y * Math.log(p) + (1 - y) * Math.log(1 - p)), mse = (p) => (y - p) ** 2;
+      const pl = U.plot({ x0: 0, x1: 1, y0: 0, y1: 5, h: 220 });
+      b.querySelector(".plot").innerHTML = pl.svg(pl.frame([0, 0.25, 0.5, 0.75, 1], [0, 1, 2, 3, 4, 5], "prediction", "cost") + pl.line(pl.path(bce), C4) + pl.line(pl.path(mse), C1) + `<circle cx="${pl.X(s.p)}" cy="${pl.Y(Math.min(5, bce(s.p)))}" r="6" fill="${C4}"/><circle cx="${pl.X(s.p)}" cy="${pl.Y(mse(s.p))}" r="6" fill="${C1}"/>`) + `<div class="legend"><span><i style="background:${C4}"></i>cross-entropy</span><span><i style="background:${C1}"></i>squared error</span></div>`;
+      const wrong = y ? s.p < 0.5 : s.p > 0.5;
+      b.querySelector(".readout").innerHTML = R`BCE $= -[\,y\ln\hat{y} + (1-y)\ln(1-\hat{y})\,] = ${y ? `-\\ln ${U.f(s.p, 2)}` : `-\\ln(1 - ${U.f(s.p, 2)})`} = ${U.f(bce(s.p), 3)}$ $\quad$ MSE $= (y - \hat{y})^2 = ${U.f(mse(s.p), 3)}$` + `<br><span class="muted">${wrong ? `Confident and wrong: cross-entropy shoots up towards infinity, squared error never goes above 1. That is why classifiers use cross-entropy: big mistakes get big pushes.` : `Right side of 0.5: both costs are small, and they reach 0 at a perfect prediction.`}</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* The ELBO as a bar: log p(x) = ELBO + gap */
+  W.elbogap = (el) => {
+    const b = U.box(el, "The ELBO is a floor under log p(x)", "We cannot compute log p(x) (how likely the model finds the image), but we can compute a floor under it, the ELBO. Training pushes the floor up in two ways.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("dec", "Decoder quality (rebuilds well)", 0, 1, 0.05, 0.4)}${U.range("enc", "Encoder quality (close to the true posterior)", 0, 1, 0.05, 0.3)}${U.range("kl", "Spread of the clouds away from N(0, I)", 0, 1, 0.05, 0.5)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const logp = -5 + 3.5 * s.dec, gap = 1.8 * (1 - s.enc), elbo = logp - gap, klp = 0.2 + 1.3 * s.kl, rec = elbo + klp;
+      const X = (v) => 30 + ((v + 7) / 7) * 500, bar = (y, a, bb, col, lab, inside) => { const w = Math.abs(X(bb) - X(a)), x = X(Math.max(a, bb)), inn = inside && w > 150; return `<rect x="${X(Math.min(a, bb))}" y="${y}" width="${w}" height="22" rx="4" fill="${col}" opacity=".85"/><text x="${inn ? x - 8 : x + 6}" y="${y + 16}"${inn ? ' text-anchor="end" style="fill:#fff;font-weight:700"' : ""}>${lab}</text>`; };
+      let g = `<line x1="${X(-7)}" y1="150" x2="${X(0)}" y2="150" stroke="var(--rule)"/>` + [-7, -6, -5, -4, -3, -2, -1, 0].map((v) => `<text x="${X(v)}" y="166" text-anchor="middle">${v}</text>`).join("");
+      g += `<line x1="${X(logp)}" y1="8" x2="${X(logp)}" y2="146" stroke="var(--ink)" stroke-width="2.5"/><text x="${X(logp)}" y="6" text-anchor="middle" style="fill:var(--ink);font-weight:700">log p(x)</text>`;
+      g += bar(24, elbo, logp, "var(--warn)", `gap = ${U.f(gap, 2)}`) + bar(56, -7, elbo, "var(--accent)", `ELBO = ${U.f(elbo, 2)}`, 1) + bar(88, -7, rec, "var(--good)", `rebuild term = ${U.f(rec, 2)}`, 1) + bar(120, rec, elbo, "var(--bad)", `− KL to prior = ${U.f(klp, 2)}`);
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 -14 600 186" style="font-size:15px">${g}</svg>`;
+      b.querySelector(".readout").innerHTML = R`$\log p(x) = \underbrace{\text{rebuild} - \text{KL}(q\,\|\,p(z))}_{\text{ELBO} \,=\, ${U.f(elbo, 2)}} + \underbrace{\text{KL}(q\,\|\,p(z \mid x))}_{\text{gap} \,=\, ${U.f(gap, 2)}} = ${U.f(logp, 2)}$` +
+        `<br><span class="muted">A better <b>decoder</b> lifts log p(x) itself. A better <b>encoder</b> shrinks the gap, because q gets closer to the true posterior. Pulling the clouds towards N(0, I) lowers the KL cost but makes rebuilding harder: that is the VAE's trade-off. The ELBO can never rise above log p(x), because the gap is never negative.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* The diffusion posterior target as a tug of war between x0 and x_t */
+  W.posterior = (el) => {
+    const b = U.box(el, "The training target: a tug of war between x₀ and xₜ", R`If we knew the clean value $x_0$, the best guess for one step back, $x_{t-1}$, is a bell curve whose centre is a weighted mix of $x_0$ and the noisy $x_t$. Move along the chain and see who wins.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("ab", R`$\bar{\alpha}_{t-1}$ (1 = early, clean; 0 = late, noisy)`, 0.02, 0.98, 0.01, 0.6)}${U.range("bt", R`$\beta_t$ (noise added this step)`, 0.01, 0.3, 0.01, 0.1)}${U.range("xt", R`Noisy value $x_t$`, -2.5, 2.5, 0.1, -1.2)}</div><div class="plot"></div><div class="readout"></div>`);
+    const x0 = 1.5;
+    const draw = (s) => {
+      const at = 1 - s.bt, abt = s.ab * at, c0 = (Math.sqrt(s.ab) * s.bt) / (1 - abt), ct = (Math.sqrt(at) * (1 - s.ab)) / (1 - abt), mu = c0 * x0 + ct * s.xt, v = ((1 - s.ab) / (1 - abt)) * s.bt, sd = Math.sqrt(v);
+      const p = U.plot({ x0: -3, x1: 3, y0: 0, y1: Math.max(1, U.npdf(0, 0, sd) * 1.1), h: 200 });
+      b.querySelector(".plot").innerHTML = p.svg(p.frame([-3, -2, -1, 0, 1, 2, 3], [0]) + p.line(p.path((x) => U.npdf(x, mu, sd)), C1) +
+        `<line x1="${p.X(x0)}" x2="${p.X(x0)}" y1="${p.padT}" y2="${p.Y(0)}" stroke="${C3}" stroke-width="3"/><text x="${p.X(x0) + 4}" y="${p.padT + 12}" style="fill:var(--good);font-weight:700">x₀</text>` +
+        `<line x1="${p.X(s.xt)}" x2="${p.X(s.xt)}" y1="${p.padT}" y2="${p.Y(0)}" stroke="${C4}" stroke-width="3"/><text x="${p.X(s.xt) + 4}" y="${p.padT + 26}" style="fill:var(--bad);font-weight:700">xₜ</text>`) +
+        `<div class="tug"><span style="flex:${c0 * x0 === 0 ? 0.01 : c0}">x₀ weight ${U.f(c0, 3)}</span><span style="flex:${ct}">xₜ weight ${U.f(ct, 3)}</span></div>`;
+      b.querySelector(".readout").innerHTML = R`$\tilde{\mu} = ${U.f(c0, 3)}\,x_0 + ${U.f(ct, 3)}\,x_t = ${U.f(mu, 3)}$, $\quad \tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t}\,\beta_t = ${U.f(v, 4)}$` +
+        `<br><span class="muted">The step back stays close to where you are ($x_t$) and leans a little towards the clean $x_0$. When generating we do not know x₀, so the network's noise guess is used to estimate it: that is why “predict the noise” is enough.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Low-rank: rebuild a weight change from r simple patterns */
+  W.lowrank = (el) => {
+    const b = U.box(el, "Why a low rank is enough", "On the left is a weight change ΔW (8 × 8) that a task needs. LoRA rebuilds it as B·A, the sum of r simple patterns. Raise the rank r and watch the copy on the right catch up.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("r", "Rank r", 1, 8, 1, 1)}</div><div class="plot"></div><div class="readout"></div>`);
+    const n = 8, rnd = U.rng(3), M = [];
+    const pats = [[1, 0.8, 0.6, 0.2, -0.2, -0.6, -0.8, -1], [0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5], [0, 0.3, 0.9, 1, 0.9, 0.3, 0, -0.2]];
+    const wts = [[0.9, 0.7, 0.2, 0, -0.4, -0.8, -1, -0.6], [0.3, -0.2, 0.6, 0.4, -0.5, 0.1, 0.2, -0.3], [-0.3, 0.5, 0.2, -0.6, 0.4, 0.3, -0.2, 0.5]];
+    for (let i = 0; i < n; i++) { M.push([]); for (let j = 0; j < n; j++) { let v = 0; for (let k = 0; k < 3; k++) v += [1.6, 0.9, 0.5][k] * pats[k][i] * wts[k][j]; M[i].push(v + 0.04 * U.gauss(rnd)); } }
+    const approx = (r) => { // rank-r approximation by power iteration with deflation
+      let R0 = M.map((row) => row.slice()); const A = M.map(() => new Array(n).fill(0));
+      for (let k = 0; k < r; k++) {
+        let v = new Array(n).fill(0).map((_, i) => Math.cos(i + k)); for (let it = 0; it < 60; it++) { const u = R0.map((row) => row.reduce((s, x, j) => s + x * v[j], 0)); v = v.map((_, j) => R0.reduce((s, row, i) => s + row[j] * u[i], 0)); const nv = Math.hypot(...v) || 1; v = v.map((x) => x / nv); }
+        const u = R0.map((row) => row.reduce((s, x, j) => s + x * v[j], 0));
+        for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { A[i][j] += u[i] * v[j]; R0[i][j] -= u[i] * v[j]; }
+      }
+      return A;
+    };
+    const heat = (Mx, ox) => Mx.map((row, i) => row.map((v, j) => { const c = Math.max(-1, Math.min(1, v / 1.6)); const col = c >= 0 ? `color-mix(in srgb, var(--bad) ${Math.round(c * 85)}%, var(--sheet))` : `color-mix(in srgb, var(--accent) ${Math.round(-c * 85)}%, var(--sheet))`; return `<rect x="${ox + j * 24}" y="${12 + i * 24}" width="23" height="23" fill="${col}"/>`; }).join("")).join("");
+    const draw = (s) => {
+      const Ap = approx(s.r); let err = 0, tot = 0; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { err += (M[i][j] - Ap[i][j]) ** 2; tot += M[i][j] ** 2; }
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 470 230">${heat(M, 10)}${heat(Ap, 260)}<text x="106" y="222" text-anchor="middle">ΔW needed</text><text x="356" y="222" text-anchor="middle">B·A with rank ${s.r}</text></svg>`;
+      b.querySelector(".readout").innerHTML = R`Error left: <b>${U.f((err / tot) * 100, 1)}%</b> $\quad$ numbers trained: $r(d + k) = ${s.r} \times 16 = ${s.r * 16}$ instead of $d \times k = 64$` + (s.r * 16 >= 64 ? `<br><b>No saving on this tiny 8 × 8 toy.</b> The saving shows on real layers:` : `<br>`) + R` a $768 \times 768$ layer with $r = ${s.r}$ trains $${(s.r * 1536).toLocaleString("en-US").replace(/,/g, "{,}")}$ numbers instead of $589{,}824$ (${U.f((s.r * 1536 / 589824) * 100, 2)}%).` +
+        `<br><span class="muted">${s.r >= 3 ? "From rank 3 the copy is almost perfect: this change was really built from 3 simple patterns. Real fine-tuning changes are like this, which is why LoRA trains only a tiny fraction of the weights." : "Not yet: one or two patterns cannot draw the whole change. Keep raising r."}</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Conditional GAN: why the label must go to both networks */
+  W.cgan = (el) => {
+    const b = U.box(el, "Ask for a digit: plain GAN vs conditional GAN", R`Choose the digit you want and move the noise $z$. A plain GAN ignores your request; a conditional GAN takes the label $y$ in both networks.`);
+    b.insertAdjacentHTML("beforeend", U.seg("m", [["p", "Plain GAN"], ["c", "Conditional GAN"]], "p") + `<div class="ctrls">${U.range("z", R`Noise $z$ (the “style” dial)`, 0, 1, 0.01, 0.3)}<div class="ctrl"><label><span>Digit you ask for, $y$</span></label>${U.seg("y", [["3", "3"], ["5", "5"], ["7", "7"]], "5")}</div></div><div class="plot"></div><div class="readout"></div>`);
+    const PLAIN = [1, 3, 7, 2, 5, 8, 0, 9, 4, 6];
+    const draw = (s) => {
+      const c = s.m === "c", y = +s.y, d = c ? y : PLAIN[Math.min(9, Math.floor(s.z * 10))], ok = d === y;
+      const rot = (s.z - 0.5) * 24, wt = 300 + Math.round(s.z * 6) * 100, sk = (0.5 - s.z) * 16;
+      const box = (x, w, t, col) => `<rect x="${x}" y="30" width="${w}" height="90" rx="10" fill="none" stroke="${col}" stroke-width="2.5"/><text x="${x + w / 2}" y="22" text-anchor="middle" style="font-weight:700">${t}</text>`;
+      const arrow = (x1, x2, y = 75) => `<line x1="${x1}" y1="${y}" x2="${x2 - 6}" y2="${y}" stroke="var(--ink-2)" stroke-width="2"/><path d="M${x2} ${y} l-8 -5 v10 z" fill="var(--ink-2)"/>`;
+      let g = `<text x="40" y="66" text-anchor="middle">z = ${U.f(s.z, 2)}</text>` + (c ? `<text x="40" y="92" text-anchor="middle" style="fill:var(--accent);font-weight:700">y = ${y}</text>` : `<text x="40" y="92" text-anchor="middle" style="fill:var(--ink-2)">(no y)</text>`);
+      g += arrow(78, 120) + box(122, 110, c ? "G(z, y)" : "G(z)", "var(--accent)") + `<text x="177" y="82" text-anchor="middle" style="font-size:13px">generator</text>` + arrow(234, 268);
+      g += `<rect x="270" y="30" width="90" height="90" rx="8" fill="var(--sheet-2)" stroke="var(--rule)"/><text x="315" y="105" text-anchor="middle" transform="rotate(${rot.toFixed(1)} 315 75) skewX(${sk.toFixed(1)})" style="font:${wt} 72px Georgia, serif;fill:var(--ink)">${d}</text>`;
+      g += arrow(362, 396) + box(398, 120, c ? "D(x, y)" : "D(x)", ok || !c ? "var(--good)" : "var(--bad)") + `<text x="458" y="70" text-anchor="middle" style="font-size:13px">discriminator</text><text x="458" y="98" text-anchor="middle" style="font-weight:700;fill:${c && !ok ? "var(--bad)" : "var(--good)"}">${c ? (ok ? "real ✓ matches ✓" : "wrong label ✗") : "looks real ✓"}</text>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 530 135">${g}</svg>` +
+        `<p class="small"><b>Cheat test</b>, a perfect 7 labelled “3”: plain D(x) scores it <b style="color:var(--good)">0.95</b> (fooled) · conditional D(x, y) scores it <b style="color:var(--bad)">0.04</b> (caught).</p>`;
+      b.querySelector(".readout").innerHTML = c
+        ? `<b>You asked for ${y} and got ${d}.</b> Moving z changes the <i>style</i> (slant, thickness), never the digit: the label decides <i>what</i>, the noise decides <i>how</i>. D sees the label too, so a realistic digit with the wrong label would be rejected; that is what forces G to obey.`
+        : `<b>You asked for ${y} and got ${d}.</b> ${ok ? "Lucky! But move z and the digit changes on its own." : "The plain generator never sees your request."} Which z gives which digit is random, and D(x) only asks “real or fake?”, so it is happy with any well-drawn digit. Switch to the conditional GAN.`;
     };
     const st = U.bind(b, draw); draw(st);
   };

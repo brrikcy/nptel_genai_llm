@@ -13,7 +13,7 @@ The app opens on a single path of 122 levels. For each of the 53 topics there is
 | | |
 |---|---|
 | **Week 0 + 12 weeks → 53 topics** | Written for a Class 10 reader. Week 0 is a maths toolkit (probability, logs and Σ, vectors, slopes and the chain rule, the bell curve) that teaches everything the course assumes. Every lecture (1–74) is mapped to a topic. Each topic opens with a puzzle, teaches the idea in short cards with “in plain words” summaries, analogies and worked examples, and ends with exam takeaways, common traps and links to the source lectures. |
-| **57 interactive models and 58 diagrams** | Probability grid, log/exponent explorer, vector and slope playgrounds, a neuron you can tune, a pixel-grid convolution, denoising and sparsity demos, activation explorer, optimizer race, step-by-step convolution, CNN layer calculator, autoencoder bottleneck, KL playground, forward vs reverse KL, reparameterisation sampler, VAE loss calculator, latent interpolation, β-VAE traversal, GAN loss dials, a trainable 1-D GAN, forward diffusion with schedules, classifier-free guidance, U-Net tour, word-vector analogies, LSTM cell, self-attention, positional encoding, BPE merges, a temperature/top-k/top-p sampler, a prompting game, LoRA calculator, mini-RAG, EM/F1/ROUGE-L calculator, safety policy gate, scaling laws, a CLIP zero-shot matcher, a fairness checker, and more. |
+| **63 interactive models and 58 diagrams** | Probability grid, log/exponent explorer, vector and slope playgrounds, a neuron you can tune, a pixel-grid convolution, denoising and sparsity demos, activation explorer, optimizer race, step-by-step convolution, CNN layer calculator, autoencoder bottleneck, KL playground, forward vs reverse KL, reparameterisation sampler, VAE loss calculator, latent interpolation, β-VAE traversal, GAN loss dials, a trainable 1-D GAN, forward diffusion with schedules, classifier-free guidance, U-Net tour, word-vector analogies, LSTM cell, self-attention, positional encoding, BPE merges, a temperature/top-k/top-p sampler, a prompting game, LoRA calculator, mini-RAG, EM/F1/ROUGE-L calculator, safety policy gate, scaling laws, a CLIP zero-shot matcher, a fairness checker, and explainers for the hardest ideas (gradient flow through the chain rule, cross-entropy vs squared error, the ELBO gap, the diffusion target, conditional GANs, low-rank updates). |
 | **Real maths notation** | Every formula is typeset with KaTeX (bundled, works offline): stacked fractions, subscripts, Greek letters and sums, never plain-text formulas. |
 | **Word bank** | 341 terms and abbreviations. The first time a term appears on a page it is underlined; tap it for a plain-language definition. The full list is in the Word bank view. |
 | **Topic quizzes** (pass 80%) | Instant feedback. A wrong answer explains why and links straight to the lesson card to re-read and the lecture video to watch. |
@@ -52,7 +52,7 @@ tools/path-walkthrough.js    a simulated learner plays every level of the learni
 
 Content strings that contain LaTeX use `R` (`String.raw`) template literals so backslashes survive, e.g. ``R`$\frac{a}{b}$` ``.
 
-The learner walkthrough and its findings are written up in [docs/student-walkthrough.md](docs/student-walkthrough.md).
+The learner walkthrough and its findings are written up in [docs/student-walkthrough.md](docs/student-walkthrough.md). The hardest concepts in the course, and the interactive help each one has, are listed in [docs/complex-concepts.md](docs/complex-concepts.md).
 
 ```
 node tools/validate.js && python3 build.py

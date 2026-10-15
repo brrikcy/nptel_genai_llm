@@ -557,4 +557,149 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- explainers for the hardest ideas ---------- */
+
+  /* Chain rule on a live computation graph (neuron), and the VAE path with / without the reparameterisation trick */
+  W.chainrule = (el) => {
+    const b = U.box(el, "Follow the gradient backwards", "Forward pass (black) computes each value left to right. Backward pass (red) multiplies the local slopes right to left: that product is the chain rule, and it is all backpropagation does. Press “Take a step” and watch the loss fall.");
+    b.insertAdjacentHTML("beforeend", `${U.seg("m", [["n", "A neuron"], ["v", "VAE with the trick"], ["s", "VAE without the trick"]], "n")}<div class="ctrls cr-ctrls"></div><div class="plot"></div><div class="row"><button class="btn small" data-act="step">Take a step (η = 0.5)</button></div><div class="readout"></div>`);
+    const P = { x: 1.5, w: -0.8, bb: 0.2, y: 1, mu: 0.4, sg: 0.8, ep: 0.6, wd: 1.2, xt: 2 };
+    let st = { m: "n" };
+    const sig = (z) => 1 / (1 + Math.exp(-z));
+    const node = (x, y, label, val, col) => `<rect x="${x - 46}" y="${y - 22}" width="92" height="44" rx="10" fill="var(--sheet)" stroke="${col || "var(--accent)"}" stroke-width="2"/><text x="${x}" y="${y - 3}" text-anchor="middle" style="fill:var(--ink);font-weight:700">${label}</text><text x="${x}" y="${y + 14}" text-anchor="middle">${val}</text>`;
+    const edge = (x1, x2, y, g, broken) => `<line x1="${x1 + 46}" y1="${y}" x2="${x2 - 48}" y2="${y}" stroke="var(--ink-2)" stroke-width="2" ${broken ? 'stroke-dasharray="5 5"' : ""}/><text x="${(x1 + x2) / 2}" y="${y + 38}" text-anchor="middle" style="fill:${broken ? "var(--ink-2)" : "var(--bad)"};font-weight:700">${broken ? "✗ no slope" : "← " + g}</text>`;
+    const ctrls = () => {
+      const c = b.querySelector(".cr-ctrls");
+      c.innerHTML = st.m === "n" ? U.range("x", "Input x", -2, 2, 0.1, P.x) + U.range("w", "Weight w", -3, 3, 0.05, P.w) + U.range("y", "Target y", 0, 1, 1, P.y)
+        : U.range("mu", R`Encoder mean $\mu$`, -2, 2, 0.05, P.mu) + U.range("sg", R`Encoder spread $\sigma$`, 0.1, 2, 0.05, P.sg) + U.range("ep", R`Noise draw $\varepsilon$`, -2, 2, 0.1, P.ep) + U.range("xt", "Target x", -3, 3, 0.1, P.xt);
+      c.querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { P[inp.dataset.k] = +inp.value; c.querySelector(`[data-o="${inp.dataset.k}"]`).textContent = inp.value; draw(); }));
+    };
+    const draw = () => {
+      let g = "", txt = "";
+      if (st.m === "n") {
+        const z = P.w * P.x + P.bb, a = sig(z), L = (a - P.y) ** 2, dLa = 2 * (a - P.y), daz = a * (1 - a), dzw = P.x, dLw = dLa * daz * dzw;
+        g = node(60, 50, "w", U.f(P.w, 2)) + edge(60, 200, 50, `∂z/∂w = x = ${U.f(dzw, 2)}`) + node(200, 50, "z = wx + b", U.f(z, 3)) + edge(200, 340, 50, `∂a/∂z = ${U.f(daz, 3)}`) + node(340, 50, "a = σ(z)", U.f(a, 3)) + edge(340, 480, 50, `∂L/∂a = ${U.f(dLa, 3)}`) + node(480, 50, "L = (a − y)²", U.f(L, 4), "var(--bad)");
+        txt = R`$\frac{\partial L}{\partial w} = \frac{\partial L}{\partial a}\cdot\frac{\partial a}{\partial z}\cdot\frac{\partial z}{\partial w} = (${U.f(dLa, 3)})(${U.f(daz, 3)})(${U.f(dzw, 2)}) = ${U.f(dLw, 4)}$` + `<br><span class="muted">The sign says which way to move w: ${dLw > 0 ? "positive, so decrease w" : dLw < 0 ? "negative, so increase w" : "zero: already at the bottom"}. Gradient descent: $w \\leftarrow w - \\eta \\cdot ${U.f(dLw, 4)}$.</span>`;
+        st.grad = dLw;
+      } else {
+        const z = P.mu + P.sg * P.ep, xh = P.wd * z, L = (xh - P.xt) ** 2, dLx = 2 * (xh - P.xt), dxz = P.wd, dLz = dLx * dxz, dLmu = dLz, dLsg = dLz * P.ep, broken = st.m === "s";
+        g = node(60, 30, "μ", U.f(P.mu, 2)) + node(60, 110, "σ", U.f(P.sg, 2)) + `<line x1="106" y1="30" x2="150" y2="62" stroke="var(--ink-2)" stroke-width="2" ${broken ? 'stroke-dasharray="5 5"' : ""}/><line x1="106" y1="110" x2="150" y2="78" stroke="var(--ink-2)" stroke-width="2" ${broken ? 'stroke-dasharray="5 5"' : ""}/>` +
+          node(200, 70, broken ? "z ~ N(μ, σ²)" : "z = μ + σε", U.f(z, 3), broken ? "var(--warn)" : "var(--accent)") + edge(200, 340, 70, `∂x̂/∂z = ${U.f(dxz, 2)}`) + node(340, 70, "x̂ = w·z", U.f(xh, 3)) + edge(340, 480, 70, `∂L/∂x̂ = ${U.f(dLx, 3)}`) + node(480, 70, "L = (x̂ − x)²", U.f(L, 4), "var(--bad)") +
+          `<text x="150" y="${broken ? 140 : 145}" style="fill:${broken ? "var(--bad)" : "var(--good)"};font-weight:700">${broken ? "✗ a random draw has no slope" : `ε = ${U.f(P.ep, 2)} is just a number on the path`}</text>`;
+        txt = broken ? R`Sampling $z$ directly is like rolling a die: there is no formula for “how much would $z$ change if $\mu$ moved a bit”, so the gradient stops at $z$ and the encoder never learns. Switch to “with the trick”.`
+          : R`$\frac{\partial L}{\partial \mu} = \frac{\partial L}{\partial \hat{x}}\cdot\frac{\partial \hat{x}}{\partial z}\cdot 1 = ${U.f(dLmu, 3)}$, $\quad \frac{\partial L}{\partial \sigma} = \frac{\partial L}{\partial \hat{x}}\cdot\frac{\partial \hat{x}}{\partial z}\cdot \varepsilon = ${U.f(dLsg, 3)}$` + `<br><span class="muted">Because $z = \\mu + \\sigma\\varepsilon$ is an ordinary formula, the gradient flows all the way back to the encoder's outputs.</span>`;
+        st.grad = broken ? null : [dLmu, dLsg];
+      }
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 540 ${st.m === "n" ? 100 : 155}">${g}</svg>`;
+      b.querySelector(".readout").innerHTML = txt;
+      b.querySelector('[data-act="step"]').disabled = st.m === "s";
+    };
+    b.querySelector('[data-act="step"]').onclick = () => {
+      if (st.m === "n") P.w = Math.max(-3, Math.min(3, +(P.w - 0.5 * st.grad).toFixed(3)));
+      else if (st.grad) { P.mu = Math.max(-2, Math.min(2, +(P.mu - 0.5 * st.grad[0]).toFixed(3))); P.sg = Math.max(0.1, Math.min(2, +(P.sg - 0.5 * st.grad[1]).toFixed(3))); }
+      ctrls(); draw();
+    };
+    b.querySelector('[data-seg="m"]').addEventListener("click", (e) => { const t = e.target.closest("button"); if (!t) return; b.querySelectorAll('[data-seg="m"] button').forEach((x) => x.classList.toggle("on", x === t)); st.m = t.dataset.v; ctrls(); draw(); });
+    ctrls(); draw();
+  };
+
+  /* Why confident wrong answers cost so much: BCE vs MSE */
+  W.lossexplorer = (el) => {
+    const b = U.box(el, "Loss explorer: how much does a mistake cost?", "Pick the true answer, then drag the model's predicted probability. Compare cross-entropy (the log loss) with squared error.");
+    b.insertAdjacentHTML("beforeend", `${U.seg("y", [["1", "True answer: YES (y = 1)"], ["0", "True answer: NO (y = 0)"]], "1")}<div class="ctrls">${U.range("p", R`Model's prediction $\hat{y}$`, 0.01, 0.99, 0.01, 0.3)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const y = +s.y, bce = (p) => -(y * Math.log(p) + (1 - y) * Math.log(1 - p)), mse = (p) => (y - p) ** 2;
+      const pl = U.plot({ x0: 0, x1: 1, y0: 0, y1: 5, h: 220 });
+      b.querySelector(".plot").innerHTML = pl.svg(pl.frame([0, 0.25, 0.5, 0.75, 1], [0, 1, 2, 3, 4, 5], "prediction", "cost") + pl.line(pl.path(bce), C4) + pl.line(pl.path(mse), C1) + `<circle cx="${pl.X(s.p)}" cy="${pl.Y(Math.min(5, bce(s.p)))}" r="6" fill="${C4}"/><circle cx="${pl.X(s.p)}" cy="${pl.Y(mse(s.p))}" r="6" fill="${C1}"/>`) + `<div class="legend"><span><i style="background:${C4}"></i>cross-entropy</span><span><i style="background:${C1}"></i>squared error</span></div>`;
+      const wrong = y ? s.p < 0.5 : s.p > 0.5;
+      b.querySelector(".readout").innerHTML = R`BCE $= -[\,y\ln\hat{y} + (1-y)\ln(1-\hat{y})\,] = ${y ? `-\\ln ${U.f(s.p, 2)}` : `-\\ln(1 - ${U.f(s.p, 2)})`} = ${U.f(bce(s.p), 3)}$ $\quad$ MSE $= (y - \hat{y})^2 = ${U.f(mse(s.p), 3)}$` + `<br><span class="muted">${wrong ? `Confident and wrong: cross-entropy shoots up towards infinity, squared error never goes above 1. That is why classifiers use cross-entropy: big mistakes get big pushes.` : `Right side of 0.5: both costs are small, and they reach 0 at a perfect prediction.`}</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* The ELBO as a bar: log p(x) = ELBO + gap */
+  W.elbogap = (el) => {
+    const b = U.box(el, "The ELBO is a floor under log p(x)", "We cannot compute log p(x) (how likely the model finds the image), but we can compute a floor under it, the ELBO. Training pushes the floor up in two ways.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("dec", "Decoder quality (rebuilds well)", 0, 1, 0.05, 0.4)}${U.range("enc", "Encoder quality (close to the true posterior)", 0, 1, 0.05, 0.3)}${U.range("kl", "Spread of the clouds away from N(0, I)", 0, 1, 0.05, 0.5)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const logp = -5 + 3.5 * s.dec, gap = 1.8 * (1 - s.enc), elbo = logp - gap, klp = 0.2 + 1.3 * s.kl, rec = elbo + klp;
+      const X = (v) => 30 + ((v + 7) / 7) * 500, bar = (y, a, bb, col, lab, inside) => { const w = Math.abs(X(bb) - X(a)), x = X(Math.max(a, bb)), inn = inside && w > 150; return `<rect x="${X(Math.min(a, bb))}" y="${y}" width="${w}" height="22" rx="4" fill="${col}" opacity=".85"/><text x="${inn ? x - 8 : x + 6}" y="${y + 16}"${inn ? ' text-anchor="end" style="fill:#fff;font-weight:700"' : ""}>${lab}</text>`; };
+      let g = `<line x1="${X(-7)}" y1="150" x2="${X(0)}" y2="150" stroke="var(--rule)"/>` + [-7, -6, -5, -4, -3, -2, -1, 0].map((v) => `<text x="${X(v)}" y="166" text-anchor="middle">${v}</text>`).join("");
+      g += `<line x1="${X(logp)}" y1="8" x2="${X(logp)}" y2="146" stroke="var(--ink)" stroke-width="2.5"/><text x="${X(logp)}" y="6" text-anchor="middle" style="fill:var(--ink);font-weight:700">log p(x)</text>`;
+      g += bar(24, elbo, logp, "var(--warn)", `gap = ${U.f(gap, 2)}`) + bar(56, -7, elbo, "var(--accent)", `ELBO = ${U.f(elbo, 2)}`, 1) + bar(88, -7, rec, "var(--good)", `rebuild term = ${U.f(rec, 2)}`, 1) + bar(120, rec, elbo, "var(--bad)", `− KL to prior = ${U.f(klp, 2)}`);
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 -14 600 186" style="font-size:15px">${g}</svg>`;
+      b.querySelector(".readout").innerHTML = R`$\log p(x) = \underbrace{\text{rebuild} - \text{KL}(q\,\|\,p(z))}_{\text{ELBO} \,=\, ${U.f(elbo, 2)}} + \underbrace{\text{KL}(q\,\|\,p(z \mid x))}_{\text{gap} \,=\, ${U.f(gap, 2)}} = ${U.f(logp, 2)}$` +
+        `<br><span class="muted">A better <b>decoder</b> lifts log p(x) itself. A better <b>encoder</b> shrinks the gap, because q gets closer to the true posterior. Pulling the clouds towards N(0, I) lowers the KL cost but makes rebuilding harder: that is the VAE's trade-off. The ELBO can never rise above log p(x), because the gap is never negative.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* The diffusion posterior target as a tug of war between x0 and x_t */
+  W.posterior = (el) => {
+    const b = U.box(el, "The training target: a tug of war between x₀ and xₜ", R`If we knew the clean value $x_0$, the best guess for one step back, $x_{t-1}$, is a bell curve whose centre is a weighted mix of $x_0$ and the noisy $x_t$. Move along the chain and see who wins.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("ab", R`$\bar{\alpha}_{t-1}$ (1 = early, clean; 0 = late, noisy)`, 0.02, 0.98, 0.01, 0.6)}${U.range("bt", R`$\beta_t$ (noise added this step)`, 0.01, 0.3, 0.01, 0.1)}${U.range("xt", R`Noisy value $x_t$`, -2.5, 2.5, 0.1, -1.2)}</div><div class="plot"></div><div class="readout"></div>`);
+    const x0 = 1.5;
+    const draw = (s) => {
+      const at = 1 - s.bt, abt = s.ab * at, c0 = (Math.sqrt(s.ab) * s.bt) / (1 - abt), ct = (Math.sqrt(at) * (1 - s.ab)) / (1 - abt), mu = c0 * x0 + ct * s.xt, v = ((1 - s.ab) / (1 - abt)) * s.bt, sd = Math.sqrt(v);
+      const p = U.plot({ x0: -3, x1: 3, y0: 0, y1: Math.max(1, U.npdf(0, 0, sd) * 1.1), h: 200 });
+      b.querySelector(".plot").innerHTML = p.svg(p.frame([-3, -2, -1, 0, 1, 2, 3], [0]) + p.line(p.path((x) => U.npdf(x, mu, sd)), C1) +
+        `<line x1="${p.X(x0)}" x2="${p.X(x0)}" y1="${p.padT}" y2="${p.Y(0)}" stroke="${C3}" stroke-width="3"/><text x="${p.X(x0) + 4}" y="${p.padT + 12}" style="fill:var(--good);font-weight:700">x₀</text>` +
+        `<line x1="${p.X(s.xt)}" x2="${p.X(s.xt)}" y1="${p.padT}" y2="${p.Y(0)}" stroke="${C4}" stroke-width="3"/><text x="${p.X(s.xt) + 4}" y="${p.padT + 26}" style="fill:var(--bad);font-weight:700">xₜ</text>`) +
+        `<div class="tug"><span style="flex:${c0 * x0 === 0 ? 0.01 : c0}">x₀ weight ${U.f(c0, 3)}</span><span style="flex:${ct}">xₜ weight ${U.f(ct, 3)}</span></div>`;
+      b.querySelector(".readout").innerHTML = R`$\tilde{\mu} = ${U.f(c0, 3)}\,x_0 + ${U.f(ct, 3)}\,x_t = ${U.f(mu, 3)}$, $\quad \tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t}\,\beta_t = ${U.f(v, 4)}$` +
+        `<br><span class="muted">The step back stays close to where you are ($x_t$) and leans a little towards the clean $x_0$. When generating we do not know x₀, so the network's noise guess is used to estimate it: that is why “predict the noise” is enough.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Low-rank: rebuild a weight change from r simple patterns */
+  W.lowrank = (el) => {
+    const b = U.box(el, "Why a low rank is enough", "On the left is a weight change ΔW (8 × 8) that a task needs. LoRA rebuilds it as B·A, the sum of r simple patterns. Raise the rank r and watch the copy on the right catch up.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("r", "Rank r", 1, 8, 1, 1)}</div><div class="plot"></div><div class="readout"></div>`);
+    const n = 8, rnd = U.rng(3), M = [];
+    const pats = [[1, 0.8, 0.6, 0.2, -0.2, -0.6, -0.8, -1], [0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5], [0, 0.3, 0.9, 1, 0.9, 0.3, 0, -0.2]];
+    const wts = [[0.9, 0.7, 0.2, 0, -0.4, -0.8, -1, -0.6], [0.3, -0.2, 0.6, 0.4, -0.5, 0.1, 0.2, -0.3], [-0.3, 0.5, 0.2, -0.6, 0.4, 0.3, -0.2, 0.5]];
+    for (let i = 0; i < n; i++) { M.push([]); for (let j = 0; j < n; j++) { let v = 0; for (let k = 0; k < 3; k++) v += [1.6, 0.9, 0.5][k] * pats[k][i] * wts[k][j]; M[i].push(v + 0.04 * U.gauss(rnd)); } }
+    const approx = (r) => { // rank-r approximation by power iteration with deflation
+      let R0 = M.map((row) => row.slice()); const A = M.map(() => new Array(n).fill(0));
+      for (let k = 0; k < r; k++) {
+        let v = new Array(n).fill(0).map((_, i) => Math.cos(i + k)); for (let it = 0; it < 60; it++) { const u = R0.map((row) => row.reduce((s, x, j) => s + x * v[j], 0)); v = v.map((_, j) => R0.reduce((s, row, i) => s + row[j] * u[i], 0)); const nv = Math.hypot(...v) || 1; v = v.map((x) => x / nv); }
+        const u = R0.map((row) => row.reduce((s, x, j) => s + x * v[j], 0));
+        for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { A[i][j] += u[i] * v[j]; R0[i][j] -= u[i] * v[j]; }
+      }
+      return A;
+    };
+    const heat = (Mx, ox) => Mx.map((row, i) => row.map((v, j) => { const c = Math.max(-1, Math.min(1, v / 1.6)); const col = c >= 0 ? `color-mix(in srgb, var(--bad) ${Math.round(c * 85)}%, var(--sheet))` : `color-mix(in srgb, var(--accent) ${Math.round(-c * 85)}%, var(--sheet))`; return `<rect x="${ox + j * 24}" y="${12 + i * 24}" width="23" height="23" fill="${col}"/>`; }).join("")).join("");
+    const draw = (s) => {
+      const Ap = approx(s.r); let err = 0, tot = 0; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { err += (M[i][j] - Ap[i][j]) ** 2; tot += M[i][j] ** 2; }
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 470 230">${heat(M, 10)}${heat(Ap, 260)}<text x="106" y="222" text-anchor="middle">ΔW needed</text><text x="356" y="222" text-anchor="middle">B·A with rank ${s.r}</text></svg>`;
+      b.querySelector(".readout").innerHTML = R`Error left: <b>${U.f((err / tot) * 100, 1)}%</b> $\quad$ numbers trained: $r(d + k) = ${s.r} \times 16 = ${s.r * 16}$ instead of $d \times k = 64$` + (s.r * 16 >= 64 ? `<br><b>No saving on this tiny 8 × 8 toy.</b> The saving shows on real layers:` : `<br>`) + R` a $768 \times 768$ layer with $r = ${s.r}$ trains $${(s.r * 1536).toLocaleString("en-US").replace(/,/g, "{,}")}$ numbers instead of $589{,}824$ (${U.f((s.r * 1536 / 589824) * 100, 2)}%).` +
+        `<br><span class="muted">${s.r >= 3 ? "From rank 3 the copy is almost perfect: this change was really built from 3 simple patterns. Real fine-tuning changes are like this, which is why LoRA trains only a tiny fraction of the weights." : "Not yet: one or two patterns cannot draw the whole change. Keep raising r."}</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Conditional GAN: why the label must go to both networks */
+  W.cgan = (el) => {
+    const b = U.box(el, "Ask for a digit: plain GAN vs conditional GAN", R`Choose the digit you want and move the noise $z$. A plain GAN ignores your request; a conditional GAN takes the label $y$ in both networks.`);
+    b.insertAdjacentHTML("beforeend", U.seg("m", [["p", "Plain GAN"], ["c", "Conditional GAN"]], "p") + `<div class="ctrls">${U.range("z", R`Noise $z$ (the “style” dial)`, 0, 1, 0.01, 0.3)}<div class="ctrl"><label><span>Digit you ask for, $y$</span></label>${U.seg("y", [["3", "3"], ["5", "5"], ["7", "7"]], "5")}</div></div><div class="plot"></div><div class="readout"></div>`);
+    const PLAIN = [1, 3, 7, 2, 5, 8, 0, 9, 4, 6];
+    const draw = (s) => {
+      const c = s.m === "c", y = +s.y, d = c ? y : PLAIN[Math.min(9, Math.floor(s.z * 10))], ok = d === y;
+      const rot = (s.z - 0.5) * 24, wt = 300 + Math.round(s.z * 6) * 100, sk = (0.5 - s.z) * 16;
+      const box = (x, w, t, col) => `<rect x="${x}" y="30" width="${w}" height="90" rx="10" fill="none" stroke="${col}" stroke-width="2.5"/><text x="${x + w / 2}" y="22" text-anchor="middle" style="font-weight:700">${t}</text>`;
+      const arrow = (x1, x2, y = 75) => `<line x1="${x1}" y1="${y}" x2="${x2 - 6}" y2="${y}" stroke="var(--ink-2)" stroke-width="2"/><path d="M${x2} ${y} l-8 -5 v10 z" fill="var(--ink-2)"/>`;
+      let g = `<text x="40" y="66" text-anchor="middle">z = ${U.f(s.z, 2)}</text>` + (c ? `<text x="40" y="92" text-anchor="middle" style="fill:var(--accent);font-weight:700">y = ${y}</text>` : `<text x="40" y="92" text-anchor="middle" style="fill:var(--ink-2)">(no y)</text>`);
+      g += arrow(78, 120) + box(122, 110, c ? "G(z, y)" : "G(z)", "var(--accent)") + `<text x="177" y="82" text-anchor="middle" style="font-size:13px">generator</text>` + arrow(234, 268);
+      g += `<rect x="270" y="30" width="90" height="90" rx="8" fill="var(--sheet-2)" stroke="var(--rule)"/><text x="315" y="105" text-anchor="middle" transform="rotate(${rot.toFixed(1)} 315 75) skewX(${sk.toFixed(1)})" style="font:${wt} 72px Georgia, serif;fill:var(--ink)">${d}</text>`;
+      g += arrow(362, 396) + box(398, 120, c ? "D(x, y)" : "D(x)", ok || !c ? "var(--good)" : "var(--bad)") + `<text x="458" y="70" text-anchor="middle" style="font-size:13px">discriminator</text><text x="458" y="98" text-anchor="middle" style="font-weight:700;fill:${c && !ok ? "var(--bad)" : "var(--good)"}">${c ? (ok ? "real ✓ matches ✓" : "wrong label ✗") : "looks real ✓"}</text>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 530 135">${g}</svg>` +
+        `<p class="small"><b>Cheat test</b>, a perfect 7 labelled “3”: plain D(x) scores it <b style="color:var(--good)">0.95</b> (fooled) · conditional D(x, y) scores it <b style="color:var(--bad)">0.04</b> (caught).</p>`;
+      b.querySelector(".readout").innerHTML = c
+        ? `<b>You asked for ${y} and got ${d}.</b> Moving z changes the <i>style</i> (slant, thickness), never the digit: the label decides <i>what</i>, the noise decides <i>how</i>. D sees the label too, so a realistic digit with the wrong label would be rejected; that is what forces G to obey.`
+        : `<b>You asked for ${y} and got ${d}.</b> ${ok ? "Lucky! But move z and the digit changes on its own." : "The plain generator never sees your request."} Which z gives which digit is random, and D(x) only asks “real or fake?”, so it is happy with any well-drawn digit. Switch to the conditional GAN.`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();
