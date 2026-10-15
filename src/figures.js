@@ -436,6 +436,40 @@
     return svg(560, 240, g, "Transformer encoder layer");
   };
 
+  /* ---------- Week 10 ---------- */
+  F.decoderLayer = () => {
+    const st = [["masked self-attention (looks only at earlier words)", SOFT, A], ["Add & Norm", "var(--warn-soft)", W], ["cross-attention (Q from here, K and V from the encoder)", "var(--good-soft)", G], ["Add & Norm", "var(--warn-soft)", W], ["feed-forward network", SOFT, A], ["Add & Norm", "var(--warn-soft)", W], ["Linear → Softmax: next-word probabilities", H, INK]];
+    let g = "";
+    st.forEach(([n, f, c], i) => { const y = 260 - i * 38; g += `${box(110, y, 340, 30, f, c, 6)}${t(280, y + 20, n, "s")}${i < st.length - 1 ? arrow(280, y, 280, y - 7) : ""}`; });
+    g += `${box(470, 160, 85, 50, SH, MUTE)}${t(512, 182, "encoder", "s")}${t(512, 198, "output", "s")}${arrow(470, 185, 452, 185, G)}`;
+    g += `${box(5, 262, 95, 30, SH, MUTE)}${t(52, 282, "words so far", "s")}${arrow(100, 277, 108, 277)}`;
+    return svg(560, 300, g, "Transformer decoder layer");
+  };
+  F.bertInput = () => {
+    const toks = ["[CLS]", "my", "dog", "[SEP]", "it", "barks", "[SEP]"];
+    let g = "";
+    toks.forEach((tk, i) => { const x = 70 + i * 70; g += `${box(x, 10, 62, 28, SH, INK, 5)}${t(x + 31, 29, tk, "s")}`;
+      [["E_" + tk.replace(/[\[\]]/g, ""), SOFT, A], [i <= 3 ? "E_A" : "E_B", "var(--warn-soft)", W], ["E_" + i, "var(--good-soft)", G]].forEach(([lab, f, c], r) => (g += `${box(x, 60 + r * 46, 62, 30, f, c, 5)}${t(x + 31, 80 + r * 46, lab, "s")}${r < 2 ? t(x + 31, 102 + r * 46, "+", "b") : ""}`)); });
+    g += t(60, 80, "token", "s", "end") + t(60, 126, "segment", "s", "end") + t(60, 172, "position", "s", "end");
+    return svg(560, 200, g, "BERT input embeddings");
+  };
+  F.bertVsGpt = () => {
+    const ws = ["The", "cat", "sat", "on", "the", "?"];
+    let g = t(140, 18, "BERT: fill in the blank, looking both ways", "b") + t(420, 18, "GPT: guess the next word, looking back only", "b");
+    ["The", "cat", "[MASK]", "on", "the", "mat"].forEach((w, i) => (g += `${box(10 + i * 44, 50, 40, 26, w === "[MASK]" ? H : SH, RULE, 4)}${t(30 + i * 44, 67, w === "[MASK]" ? "?" : w, "s")}`));
+    [0, 1, 3, 4, 5].forEach((i) => (g += `<path d="M${30 + i * 44} 80 Q${(30 + i * 44 + 118) / 2} 120 118 82" fill="none" stroke="${A}" stroke-width="1.5"/>`));
+    g += `<line x1="280" y1="30" x2="280" y2="140" stroke="${RULE}"/>`;
+    ws.forEach((w, i) => (g += `${box(290 + i * 44, 50, 40, 26, w === "?" ? H : SH, RULE, 4)}${t(310 + i * 44, 67, w, "s")}`));
+    [0, 1, 2, 3, 4].forEach((i) => (g += `<path d="M${310 + i * 44} 80 Q${(310 + i * 44 + 530) / 2} 125 530 82" fill="none" stroke="${G}" stroke-width="1.5"/>`));
+    return svg(560, 145, g, "BERT versus GPT");
+  };
+  F.promptAnatomy = () => {
+    const parts = [["Role", "You are a friendly science teacher.", W], ["Task", "Explain machine learning", A], ["Audience", "to first-year engineering students", G], ["Format & length", "in 150 words, simple language,", B], ["Constraint / example", "with one real-world example.", MUTE]];
+    let g = "";
+    parts.forEach(([k, v, c], i) => { const y = 12 + i * 38; g += `${box(10, y, 150, 30, SH, c, 6)}${t(85, y + 20, k, "b")}${box(170, y, 380, 30, "var(--sheet)", RULE, 6)}${t(180, y + 20, v, "s", "start")}`; });
+    return svg(560, 205, g, "Prompt anatomy");
+  };
+
   /* Render x_t, c_{t−1}, z_T … in figure labels as real subscripts. */
   const subs = (svgText) => svgText.replace(/>([^<]+)</g, (m, txt) => ">" + txt.replace(/([A-Za-zα-ωεθ̂]+)_(\{[^}]+\}|[A-Za-z0-9θ]+)/g, (mm, base, sb) => `${base}<tspan baseline-shift="sub" font-size="75%">${sb.replace(/^\{|\}$/g, "")}</tspan>`) + "<");
   Object.keys(F).filter((k) => k[0] !== "_").forEach((k) => { const fn = F[k]; F[k] = () => subs(fn()); });

@@ -449,4 +449,47 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- Week 10 ---------- */
+
+  /* BERT-style fill-in-the-blank: left-only vs both sides */
+  W.mlm = (el) => {
+    const b = U.box(el, "Fill in the blank: one side or both?", "A tiny model guesses the hidden word. Compare a reader that only sees the words on the LEFT (like GPT) with one that sees BOTH sides (like BERT).");
+    const S = [
+      { left: "I sat by the", right: "of the river and fished.", cand: [["bank", 1, 9], ["edge", 2, 3], ["table", 3, 0.1], ["window", 3, 0.1]] },
+      { left: "The boy is", right: "football with his friends.", cand: [["playing", 1, 9], ["watching", 2, 2], ["happy", 3, 0.05], ["eating", 2, 0.1]] },
+      { left: "She paid the money into the", right: "and got a receipt.", cand: [["bank", 2, 8], ["shop", 2, 2], ["river", 0.5, 0.05], ["box", 1, 0.5]] }
+    ];
+    b.insertAdjacentHTML("beforeend", `${U.seg("k", [["0", "River sentence"], ["1", "Football sentence"], ["2", "Money sentence"]], "0")}<div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const q = S[+s.k], L = q.cand.map((c) => c[1]), B = q.cand.map((c) => c[1] * c[2]);
+      const norm = (a) => { const t = a.reduce((x, y) => x + y, 0); return a.map((x) => x / t); };
+      const pl = norm(L), pb = norm(B);
+      let g = `<text x="10" y="22">${q.left} <tspan style="font-weight:700;fill:var(--accent)">[MASK]</tspan> <tspan style="fill:var(--ink-2)">${q.right}</tspan></text>`;
+      q.cand.forEach((c, i) => { const y = 46 + i * 34; g += `<text x="10" y="${y + 14}">${c[0]}</text><rect x="90" y="${y}" width="${pl[i] * 190}" height="12" rx="3" fill="var(--hi)"/><text x="${94 + pl[i] * 190}" y="${y + 10}" style="font-size:11px">${U.f(pl[i], 2)}</text><rect x="320" y="${y}" width="${pb[i] * 190}" height="12" rx="3" fill="var(--accent)"/><text x="${324 + pb[i] * 190}" y="${y + 10}" style="font-size:11px">${U.f(pb[i], 2)}</text>`; });
+      g += `<text x="90" y="40" style="font-size:12px;fill:var(--ink-2)">left side only (GPT-style)</text><text x="320" y="40" style="font-size:12px;fill:var(--ink-2)">both sides (BERT-style)</text>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 560 190">${g}</svg>`;
+      const bl = q.cand[pl.indexOf(Math.max(...pl))][0], bb = q.cand[pb.indexOf(Math.max(...pb))][0];
+      b.querySelector(".readout").innerHTML = `Left-only best guess: <b>${bl}</b> (${U.f(Math.max(...pl) * 100, 0)}% sure) · both-sides best guess: <b>${bb}</b> (${U.f(Math.max(...pb) * 100, 0)}% sure).<br><span class="muted">The words after the blank carry the clue (“river”, “football”, “receipt”). BERT's masked language modelling trains exactly this skill. GPT cannot use the right side because it must write left to right.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Autoregressive next-word generation with a tiny bigram model */
+  W.nextword = (el) => {
+    const b = U.box(el, "Generate text one token at a time", "A tiny model learned which word tends to follow which from a few sentences. Press “Next token”: it computes the probability of every possible next word, picks one, appends it, and repeats. That loop is how GPT writes.");
+    const corpus = "the cat sat on the mat . the cat ate the fish . the dog sat on the rug . the dog ate the bone . a cat sat on a mat . the fish swam in the pond .".split(" ");
+    const big = {}; for (let i = 0; i < corpus.length - 1; i++) { const a = corpus[i], c = corpus[i + 1]; big[a] = big[a] || {}; big[a][c] = (big[a][c] || 0) + 1; }
+    b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("m", [["greedy", "Always pick the most likely"], ["sample", "Pick at random by probability"]], "greedy")}<button class="btn small" data-act="next">Next token</button><button class="btn ghost small" data-act="reset">Start again</button></div><div class="gen readout" style="font-size:1.05rem"></div><div class="plot"></div>`);
+    let seq = ["the"], st; const r = U.rng(5);
+    const draw = () => {
+      const last = seq[seq.length - 1], nx = big[last] || {}, tot = Object.values(nx).reduce((a, x) => a + x, 0);
+      const probs = Object.entries(nx).map(([w, c]) => [w, c / tot]).sort((a, c) => c[1] - a[1]);
+      b.querySelector(".gen").innerHTML = seq.map((w, i) => `<span class="tok" style="cursor:default${i === seq.length - 1 ? ";background:var(--accent);color:var(--sheet)" : ""}">${w}</span>`).join(" ");
+      b.querySelector(".plot").innerHTML = probs.length ? `<div class="small muted">P(next word | “${last}”):</div>` + probs.map(([w, p]) => `<div class="row" style="gap:8px;margin:2px 0"><span style="width:70px">${w}</span><span style="display:inline-block;height:12px;width:${p * 300}px;background:var(--hi);border-radius:3px"></span><span class="small">${U.f(p, 2)}</span></div>`).join("") : `<div class="small muted">No known next word: generation stops.</div>`;
+    };
+    st = U.bind(b, draw);
+    b.addEventListener("click", (e) => { const a = e.target.closest("[data-act]"); if (!a) return; if (a.dataset.act === "reset") seq = ["the"]; else { const nx = big[seq[seq.length - 1]] || {}; const ent = Object.entries(nx); if (ent.length && seq.length < 24) { let w; if (st.m === "greedy") w = ent.sort((x, y) => y[1] - x[1])[0][0]; else { const tot = ent.reduce((s2, x) => s2 + x[1], 0); let u = r() * tot; w = ent[0][0]; for (const [k, c] of ent) { u -= c; if (u <= 0) { w = k; break; } } } seq.push(w); } } draw(); });
+    draw();
+  };
 })();
