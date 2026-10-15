@@ -249,4 +249,46 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- Week 4 ---------- */
+
+  /* Two latent knobs controlling a face: entangled or disentangled */
+  W.latentfaces = (el) => {
+    const b = U.box(el, "Two knobs, one face: entangled or disentangled?", R`The decoder turns two latent numbers $z_1, z_2$ into a face. In the disentangled decoder, $z_1$ only changes the smile and $z_2$ only changes the eye size. Switch to entangled and each knob changes several things at once.`);
+    b.insertAdjacentHTML("beforeend", `${U.seg("m", [["dis", "Disentangled decoder"], ["ent", "Entangled decoder"]], "dis")}<div class="ctrls">${U.range("z1", R`$z_1$`, -2, 2, 0.1, 0.5)}${U.range("z2", R`$z_2$`, -2, 2, 0.1, 0)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      let smile, eye, tilt, hue;
+      if (s.m === "dis") { smile = s.z1 / 2; eye = 0.1 + 0.05 * s.z2; tilt = 0; hue = 0; }
+      else { smile = (s.z1 - s.z2) / 3; eye = 0.1 + 0.03 * (s.z1 + s.z2); tilt = 12 * (s.z1 + 0.5 * s.z2); hue = 0.25 * (s.z1 - s.z2); }
+      const r = 70, cx = 140, cy = 100;
+      const face = `<g transform="rotate(${tilt} ${cx} ${cy})"><circle cx="${cx}" cy="${cy}" r="${r}" fill="color-mix(in srgb, var(--hi) ${Math.round(80 - hue * 60)}%, var(--bad))" stroke="var(--ink)" stroke-width="2"/><circle cx="${cx - 25}" cy="${cy - 18}" r="${Math.max(3, r * eye)}" fill="var(--ink)"/><circle cx="${cx + 25}" cy="${cy - 18}" r="${Math.max(3, r * eye)}" fill="var(--ink)"/><path d="M${cx - 32} ${cy + 22} Q${cx} ${cy + 22 + smile * 50} ${cx + 32} ${cy + 22}" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/></g>`;
+      const pts = `<rect x="310" y="20" width="160" height="160" fill="var(--sheet-2)" stroke="var(--rule)"/><line x1="390" y1="20" x2="390" y2="180" stroke="var(--rule)"/><line x1="310" y1="100" x2="470" y2="100" stroke="var(--rule)"/><circle cx="${390 + s.z1 * 40}" cy="${100 - s.z2 * 40}" r="7" fill="var(--accent)"/><text x="470" y="96" text-anchor="end">z₁</text><text x="396" y="34">z₂</text><text x="390" y="198" text-anchor="middle">latent space</text>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 500 205">${face}${pts}</svg>`;
+      b.querySelector(".readout").innerHTML = s.m === "dis" ? R`Disentangled: $z_1$ → smile only, $z_2$ → eye size only. Each knob means one thing, so editing is easy.` : R`Entangled: $z_1$ changes the smile <b>and</b> the head tilt <b>and</b> the colour; $z_2$ does too. Try to add a smile without tilting the head: you cannot with one knob. A $\beta$-VAE pushes towards the disentangled kind.`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* ---------- Week 5 ---------- */
+
+  /* Rounds of GAN training: forger vs detective */
+  W.ganrounds = (el) => {
+    const b = U.box(el, "Watch a GAN train, round by round", R`Slide through the training rounds. Each round the discriminator gets better at spotting fakes, then the generator improves its fakes. Watch $D(x)$ on real images and $D(G(z))$ on fakes head towards $0.5$.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("r", "Training round", 0, 10, 1, 0)}</div><div class="plot"></div><div class="readout"></div>`);
+    const dx = (r) => 0.98 - 0.48 * (1 - Math.exp(-r / 3)), dg = (r) => 0.03 + 0.47 * (1 - Math.exp(-r / 3));
+    const draw = (s) => {
+      const r = s.r, q = Math.min(1, r / 8);
+      const R0 = U.rng(3); let blobs = "";
+      for (let i = 0; i < 6; i++) { const jitter = (1 - q) * 14; blobs += `<circle cx="${300 + (R0() - 0.5) * jitter}" cy="${70 + (R0() - 0.5) * jitter}" r="${3 + (1 - q) * 3}" fill="var(--ink)" opacity="${0.3 + 0.7 * (1 - q) * R0()}"/>`; }
+      const face = (cx, cy, k) => `<circle cx="${cx}" cy="${cy}" r="34" fill="var(--hi)" opacity="${k}" stroke="var(--ink)" stroke-opacity="${k}"/><circle cx="${cx - 11}" cy="${cy - 8}" r="4" fill="var(--ink)" opacity="${k}"/><circle cx="${cx + 11}" cy="${cy - 8}" r="4" fill="var(--ink)" opacity="${k}"/><path d="M${cx - 14} ${cy + 10} Q${cx} ${cy + 22} ${cx + 14} ${cy + 10}" fill="none" stroke="var(--ink)" stroke-opacity="${k}" stroke-width="3"/>`;
+      const g = `<text x="120" y="20" text-anchor="middle">real image</text>${face(120, 70, 1)}<text x="300" y="20" text-anchor="middle">generator's fake</text>${face(300, 70, q)}${blobs}
+        <rect x="40" y="130" width="160" height="16" rx="8" fill="var(--sheet-2)" stroke="var(--rule)"/><rect x="40" y="130" width="${160 * dx(r)}" height="16" rx="8" fill="var(--good)"/><text x="120" y="164" text-anchor="middle">D(real) = ${U.f(dx(r), 2)}</text>
+        <rect x="220" y="130" width="160" height="16" rx="8" fill="var(--sheet-2)" stroke="var(--rule)"/><rect x="220" y="130" width="${160 * dg(r)}" height="16" rx="8" fill="var(--bad)"/><text x="300" y="164" text-anchor="middle">D(fake) = ${U.f(dg(r), 2)}</text>
+        <line x1="120" y1="126" x2="120" y2="150" stroke="var(--ink)" stroke-dasharray="2 2"/><line x1="300" y1="126" x2="300" y2="150" stroke="var(--ink)" stroke-dasharray="2 2"/><text x="440" y="70" text-anchor="middle">${r === 0 ? "start" : r < 4 ? "D winning" : r < 8 ? "G catching up" : "near equilibrium"}</text>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 520 175">${g}</svg><div class="legend"><span>dashed line = 0.5, the coin-toss point</span></div>`;
+      const Ld = -Math.log(dx(r)) - Math.log(1 - dg(r)), Lg = -Math.log(dg(r));
+      b.querySelector(".readout").innerHTML = R`$L_D = -\ln ${U.f(dx(r), 2)} - \ln(1 - ${U.f(dg(r), 2)}) = ${U.f(Ld, 3)}$ · $L_G = -\ln ${U.f(dg(r), 2)} = ${U.f(Lg, 3)}$<br>` + (r >= 8 ? R`Both outputs are near $0.5$: D can no longer tell real from fake. At the exact equilibrium $L_D = 2\ln 2 = 1.386$ and $L_G = \ln 2 = 0.693$.` : "D still separates real from fake, so G keeps learning from D's verdicts.");
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();

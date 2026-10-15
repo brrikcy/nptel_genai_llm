@@ -325,22 +325,22 @@
   /* 13. Latent interpolation: pixel space vs latent space */
   W.interp = (el) => {
     const b = U.box(el, "Interpolate in pixel space or in latent space?", "Blend a circle into a 5-point star. Pixel blending cross-fades two images (ghosting). Latent blending changes the shape parameters, so every in-between frame is a valid shape.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("a", "α (0 = circle, 1 = star)", 0, 1, 0.05, 0.5)}</div><div class="row" style="gap:18px"><div><div class="eyebrow">Pixel space: (1−α)x₁ + αx₂</div><canvas width="180" height="180" class="wcanvas c1" style="width:180px;margin-top:6px"></canvas></div><div><div class="eyebrow">Latent space: decode((1−α)z₁ + αz₂)</div><canvas width="180" height="180" class="wcanvas c2" style="width:180px;margin-top:6px"></canvas></div></div><div class="readout"></div>`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("a", R`$\alpha$ (0 = circle, 1 = star)`, 0, 1, 0.05, 0.5)}</div><div class="row" style="gap:18px"><div><div class="eyebrow">Pixel space: blend the pictures</div><canvas width="180" height="180" class="wcanvas c1" style="width:180px;margin-top:6px"></canvas></div><div><div class="eyebrow">Latent space: blend the codes, decode</div><canvas width="180" height="180" class="wcanvas c2" style="width:180px;margin-top:6px"></canvas></div></div><div class="readout"></div>`);
     const shape = (ctx, depth, alpha) => { ctx.beginPath(); for (let i = 0; i <= 200; i++) { const t = (i / 200) * Math.PI * 2; const R = Math.max(18, 62 * (1 - depth * 0.45 * (1 - Math.cos(5 * t)))); const x = 90 + R * Math.sin(t), y = 92 - R * Math.cos(t); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); } ctx.closePath(); ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1; };
     const draw = (s) => {
       const acc = U.css("--accent"), bg = U.css("--sheet-2");
       const c1 = b.querySelector(".c1").getContext("2d"), c2 = b.querySelector(".c2").getContext("2d");
       [c1, c2].forEach((c) => { c.fillStyle = bg; c.fillRect(0, 0, 180, 180); c.fillStyle = acc; });
       shape(c1, 0, 1 - s.a); shape(c1, 1, s.a); shape(c2, s.a, 1);
-      b.querySelector(".readout").innerHTML = `z₁ = [pointiness 0.0] · z₂ = [pointiness 1.0] · z = ${U.f(1 - s.a, 2)}·z₁ + ${U.f(s.a, 2)}·z₂ = [${U.f(s.a, 2)}]<br><span class="muted">This only works when the latent space is smooth and continuous. A plain autoencoder leaves gaps between codes; the KL term of a VAE packs codes near N(0, I), which makes interpolation meaningful.</span>`;
+      b.querySelector(".readout").innerHTML = R`Pixels: $(1-\alpha)\,x_1 + \alpha\,x_2$ overlays two pictures (ghosting).<br>Codes: $z_1 = [\text{pointiness } 0]$, $z_2 = [\text{pointiness } 1]$, $z = ${U.f(1 - s.a, 2)}\,z_1 + ${U.f(s.a, 2)}\,z_2 = [${U.f(s.a, 2)}]$, decoded into one clean shape.<br><span class="muted">This only works when the latent space is smooth and gap-free. A plain autoencoder leaves gaps between codes; the KL term of a VAE packs codes near $\mathcal{N}(0, I)$, which makes interpolation meaningful.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 14. Beta-VAE traversal */
   W.betavae = (el) => {
-    const b = U.box(el, "β-VAE: entangled vs disentangled latents", "We traverse one latent unit z₁ from −2 to +2 and decode. At β = 1 the unit mixes several factors. As β grows, each unit controls one factor, at the cost of blurrier reconstructions.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("beta", "β (weight on the KL term)", 0.5, 8, 0.5, 1)}</div><canvas width="560" height="110" class="wcanvas cv" style="aspect-ratio:560/110"></canvas><div class="readout"></div>`);
+    const b = U.box(el, "β-VAE: entangled vs disentangled latents", R`We sweep one latent number $z_1$ from $-2$ to $+2$ and decode each step. At $\beta = 1$ it changes several features at once. As $\beta$ grows, it controls one feature only, but the pictures get blurrier.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("beta", R`$\beta$ (weight on the KL term)`, 0.5, 8, 0.5, 1)}</div><canvas width="560" height="110" class="wcanvas cv" style="aspect-ratio:560/110"></canvas><div class="readout"></div>`);
     const draw = (s) => {
       const cv = b.querySelector(".cv"), ctx = cv.getContext("2d"); const acc = U.css("--accent"), bg = U.css("--sheet-2"), ink = U.css("--ink-2");
       ctx.fillStyle = bg; ctx.fillRect(0, 0, 560, 110);
@@ -351,35 +351,35 @@
         ctx.fillStyle = ink; ctx.font = "11px monospace"; ctx.textAlign = "center"; ctx.fillText(`z₁=${z.toFixed(1)}`, 40 + i * 80, 104);
       }
       ctx.filter = "none";
-      b.querySelector(".readout").innerHTML = `Loss = reconstruction + <b>β</b>·KL(q(z|x) ‖ N(0, I))<br>Changing z₁ alters: size${ent > 0.15 ? " + rotation + shade (entangled)" : " only (disentangled)"} · reconstruction sharpness: ${s.beta <= 1.5 ? "high" : s.beta < 4 ? "medium" : "low (blurry)"}<br><span class="muted">β = 1 is the ordinary VAE. β &gt; 1 pushes the posterior harder toward the factorised prior, which encourages independent (disentangled) latent factors.</span>`;
+      b.querySelector(".readout").innerHTML = R`Loss $=$ reconstruction $+\ ${s.beta} \times D_{\mathrm{KL}}(q(z \mid x) \,\|\, \mathcal{N}(0, I))$<br>Changing $z_1$ alters: size${ent > 0.15 ? " + rotation + shade (entangled)" : " only (disentangled)"} · sharpness: ${s.beta <= 1.5 ? "high" : s.beta < 4 ? "medium" : "low (blurry)"}<br><span class="muted">$\beta = 1$ is the ordinary VAE. $\beta > 1$ pulls harder towards the prior, which encourages one-feature-per-latent codes.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 15. GAN losses */
   W.ganloss = (el) => {
-    const b = U.box(el, "GAN loss dials", "D(x) is the discriminator's probability that a real image is real. D(G(z)) is its probability that a fake image is real. Watch each player's loss.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("dx", "D(x) on a real sample", 0.01, 0.99, 0.01, 0.9)}${U.range("dg", "D(G(z)) on a fake sample", 0.01, 0.99, 0.01, 0.1)}</div><div class="plot"></div><div class="readout"></div>`);
+    const b = U.box(el, "GAN loss dials", R`$D(x)$ is the discriminator's probability that a real image is real. $D(G(z))$ is its probability that a fake image is real. Move both and watch each player's loss.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("dx", R`$D(x)$ on a real image`, 0.01, 0.99, 0.01, 0.9)}${U.range("dg", R`$D(G(z))$ on a fake image`, 0.01, 0.99, 0.01, 0.1)}</div><div class="plot"></div><div class="readout"></div>`);
     const draw = (s) => {
       const p = U.plot({ x0: 0, x1: 1, y0: -5, y1: 5, h: 230 });
       const g = p.frame([0, 0.25, 0.5, 0.75, 1], [-4, -2, 0, 2, 4], "D(G(z))", "generator objective (minimise)") +
         p.line(p.path((d) => -Math.log(d)), C1) + p.line(p.path((d) => Math.log(1 - d)), C2) +
         `<circle cx="${p.X(s.dg)}" cy="${p.Y(-Math.log(s.dg))}" r="5" fill="${C1}"/><circle cx="${p.X(s.dg)}" cy="${p.Y(Math.log(1 - s.dg))}" r="5" fill="${C2}"/>`;
-      b.querySelector(".plot").innerHTML = p.svg(g) + `<div class="legend"><span><i style="background:${C1}"></i>non-saturating: −log D(G(z))</span><span><i style="background:${C2}"></i>minimax: log(1 − D(G(z)))</span></div>`;
+      b.querySelector(".plot").innerHTML = p.svg(g) + `<div class="legend"><span><i style="background:${C1}"></i>non-saturating loss</span><span><i style="background:${C2}"></i>minimax loss</span></div>`;
       const Ld = -Math.log(s.dx) - Math.log(1 - s.dg);
-      b.querySelector(".readout").innerHTML = `Discriminator: L_D = −log D(x) − log(1 − D(G(z))) = ${U.f(-Math.log(s.dx), 3)} + ${U.f(-Math.log(1 - s.dg), 3)} = <b>${U.f(Ld, 4)}</b><br>
-        Value V = log D(x) + log(1 − D(G(z))) = <b>${U.f(-Ld, 4)}</b> (D maximises V, G minimises it)<br>
-        Generator, minimax form: log(1 − D(G(z))) = <b>${U.f(Math.log(1 - s.dg), 4)}</b> · gradient wrt D(G(z)): ${U.f(-1 / (1 - s.dg), 3)}<br>
-        Generator, non-saturating form: −log D(G(z)) = <b>${U.f(-Math.log(s.dg), 4)}</b> · gradient: ${U.f(-1 / s.dg, 3)}<br>
-        <span class="muted">Early in training D(G(z)) ≈ 0. The minimax curve is flat there (gradient ≈ −1), the non-saturating one is steep (gradient ≈ −1/D(G(z))). That is why practical GANs train G with −log D(G(z)). At equilibrium D = ½ everywhere and V = −log 4 ≈ −1.386.</span>`;
+      b.querySelector(".readout").innerHTML = R`Discriminator: $L_D = -\log D(x) - \log(1 - D(G(z))) = ${U.f(-Math.log(s.dx), 3)} + ${U.f(-Math.log(1 - s.dg), 3)} = ${U.f(Ld, 4)}$<br>
+        Value $V = \log D(x) + \log(1 - D(G(z))) = ${U.f(-Ld, 4)}$ (D pushes $V$ up, G pushes it down)<br>
+        Generator, minimax form: $\log(1 - D(G(z))) = ${U.f(Math.log(1 - s.dg), 4)}$ · slope: $${U.f(-1 / (1 - s.dg), 3)}$<br>
+        Generator, non-saturating form: $-\log D(G(z)) = ${U.f(-Math.log(s.dg), 4)}$ · slope: $${U.f(-1 / s.dg, 3)}$<br>
+        <span class="muted">Early in training $D(G(z)) \approx 0$. The minimax curve is flat there (slope $\approx -1$), the non-saturating one is steep (slope $\approx -\frac{1}{D(G(z))}$). That is why real GANs train G with $-\log D(G(z))$. At the equilibrium $D = \frac{1}{2}$ everywhere and $V = -\log 4 \approx -1.386$.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 16. 1-D GAN toy with optimal discriminator */
   W.gan1d = (el) => {
-    const b = U.box(el, "A 1-D GAN you can train", "Real data ~ N(2, 0.6²). The generator outputs N(μ_g, σ_g²). For any generator the best discriminator is D*(x) = p_data / (p_data + p_g). Press Train and watch D* flatten to ½.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("mg", "Generator μ_g", -3, 4, 0.05, -2)}${U.range("sg", "Generator σ_g", 0.2, 2, 0.05, 1.2)}</div><div class="row"><button class="btn small" data-act="train">Train generator ×10 steps</button><button class="btn quiet small" data-act="reset">Reset</button></div><div class="plot"></div><div class="readout"></div>`);
+    const b = U.box(el, "A 1-D GAN you can train", R`Real data is $\mathcal{N}(2, 0.6^2)$. The generator outputs $\mathcal{N}(\mu_g, \sigma_g^2)$. For any generator the best discriminator is $D^*(x) = \frac{p_{\text{data}}}{p_{\text{data}} + p_g}$. Press Train and watch $D^*$ flatten to $\frac{1}{2}$.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("mg", R`Generator centre $\mu_g$`, -3, 4, 0.05, -2)}${U.range("sg", R`Generator spread $\sigma_g$`, 0.2, 2, 0.05, 1.2)}</div><div class="row"><button class="btn small" data-act="train">Train generator ×10 steps</button><button class="btn quiet small" data-act="reset">Reset</button></div><div class="plot"></div><div class="readout"></div>`);
     const md = 2, sd = 0.6; let st;
     const xs = []; for (let i = 0; i <= 400; i++) xs.push(-5 + (10 * i) / 400);
     const JSD = (m, s) => { let j = 0; const dx = 10 / 400; xs.forEach((x) => { const p = U.npdf(x, md, sd), q = U.npdf(x, m, s), mm = (p + q) / 2; if (p > 1e-12) j += 0.5 * p * Math.log(p / mm) * dx; if (q > 1e-12) j += 0.5 * q * Math.log(q / mm) * dx; }); return j; };
@@ -388,9 +388,9 @@
       const g = p.frame([-4, -2, 0, 2, 4], [0, 0.5, 1]) + `<line x1="${p.X(-5)}" x2="${p.X(5)}" y1="${p.Y(0.5)}" y2="${p.Y(0.5)}" stroke="var(--ink-2)" stroke-dasharray="2 3"/>` +
         p.line(p.path((x) => U.npdf(x, md, sd) * 1.4), C3) + p.line(p.path((x) => U.npdf(x, s.mg, s.sg) * 1.4), C2) +
         p.line(p.path((x) => { const a = U.npdf(x, md, sd), q = U.npdf(x, s.mg, s.sg); return a + q < 1e-9 ? 0.5 : a / (a + q); }), C1, 'stroke-dasharray="6 4"');
-      b.querySelector(".plot").innerHTML = p.svg(g) + `<div class="legend"><span><i style="background:${C3}"></i>p_data</span><span><i style="background:${C2}"></i>p_g (generator)</span><span><i style="background:${C1}"></i>D*(x)</span></div>`;
+      b.querySelector(".plot").innerHTML = p.svg(g) + `<div class="legend"><span><i style="background:${C3}"></i>real data</span><span><i style="background:${C2}"></i>generator</span><span><i style="background:${C1}"></i>best discriminator</span></div>`;
       const j = JSD(s.mg, s.sg);
-      b.querySelector(".readout").innerHTML = `JS divergence(p_data, p_g) = <b>${U.f(j, 4)}</b> (max ln 2 = 0.693)<br>V(D*, G) = −log 4 + 2·JSD = <b>${U.f(-Math.log(4) + 2 * j, 4)}</b> → minimum −1.386 when p_g = p_data<br><span class="muted">${j < 0.005 ? "Nash equilibrium: D* = ½ everywhere. The discriminator can no longer tell real from fake, and neither player can improve by changing alone." : "The generator descends this value. Where p_g has no overlap with p_data, D* is ≈ 0 or 1 and gradients vanish — one reason vanilla GAN training is unstable."}</span>`;
+      b.querySelector(".readout").innerHTML = R`JS divergence between real and generated: $${U.f(j, 4)}$ (largest possible $\ln 2 = 0.693$)<br>$V(D^*, G) = -\log 4 + 2\,\text{JSD} = ${U.f(-Math.log(4) + 2 * j, 4)}$ → lowest value $-1.386$ when the two match<br><span class="muted">${j < 0.005 ? R`Nash equilibrium: $D^* = \frac{1}{2}$ everywhere. The discriminator can no longer tell real from fake, and neither player can improve alone.` : "The generator walks this value downhill. Where the generator has no overlap with the real data, the best discriminator is about 0 or 1 and the slope vanishes, one reason plain GAN training is unstable."}</span>`;
     };
     st = U.bind(b, draw);
     const setv = (k, v) => { const inp = b.querySelector(`[data-k="${k}"]`); inp.value = v; inp.dispatchEvent(new Event("input")); };

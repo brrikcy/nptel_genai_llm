@@ -244,4 +244,59 @@
       ${st(218, "μ, log σ²", "[0.043,0.551]")}${arrow(312, 95, 324, 95)}${st(326, "z = μ+σε", "[0.764,0.318]", W)}${arrow(420, 95, 432, 95)}${st(434, "decoder", "x̂ (4 numbers)")}
       ${t(290, 160, "loss = MSE 9.711 + KL 0.352 = 10.063", "b")}${t(290, 30, "ReLU → linear heads → sample → ReLU → linear output", "s")}`, "VAE worked pass");
   };
+
+  /* ---------- Week 4 ---------- */
+  const smiley = (cx, cy, r, smile, extra = "") => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${H}" stroke="${INK}" stroke-width="2"/><circle cx="${cx - r * 0.35}" cy="${cy - r * 0.25}" r="${r * 0.1}" fill="${INK}"/><circle cx="${cx + r * 0.35}" cy="${cy - r * 0.25}" r="${r * 0.1}" fill="${INK}"/><path d="M${cx - r * 0.45} ${cy + r * 0.3} Q${cx} ${cy + r * 0.3 + smile * r * 0.5} ${cx + r * 0.45} ${cy + r * 0.3}" fill="none" stroke="${INK}" stroke-width="2.5"/>${extra}`;
+  F._h.smiley = smiley;
+  F.traversalFig = () => svg(560, 150, [-3, -2, -1, 0, 1, 2, 3].map((z, i) => smiley(45 + i * 78, 60, 30, z / 3) + t(45 + i * 78, 118, `z₄ = ${z}`, "s")).join("") + t(280, 142, "z₁, z₂, z₃, z₅ fixed; only z₄ changes → only the smile changes", "s"), "Latent traversal");
+  F.cvaeArch = () => svg(560, 200, `
+    ${box(10, 40, 70, 40, SH, MUTE)}${t(45, 65, "image x")}${box(10, 110, 70, 40, "var(--warn-soft)", W)}${t(45, 135, "label c")}
+    ${arrow(82, 60, 110, 85)}${arrow(82, 130, 110, 105)}<path d="M112 55 L180 75 L180 120 L112 140Z" fill="${SOFT}" stroke="${A}"/>${t(146, 160, "encoder", "s")}
+    ${arrow(182, 97, 212, 97)}<circle cx="240" cy="97" r="26" fill="${H}" stroke="${INK}"/>${t(240, 102, "z", "b")}${t(240, 145, "style", "s")}
+    ${arrow(268, 90, 300, 90)}${box(300, 150, 70, 36, "var(--warn-soft)", W)}${t(335, 173, "label c")}${arrow(335, 148, 335, 125, W)}
+    <path d="M302 70 L370 50 L370 140 L302 120Z" fill="${SOFT}" stroke="${A}"/>${t(336, 38, "decoder", "s")}
+    ${arrow(372, 95, 405, 95)}${box(407, 70, 70, 50, SH, MUTE)}${t(442, 100, "x̂")}
+    ${t(520, 85, "ask for", "s")}${t(520, 102, "c = “7”", "b")}`, "Conditional VAE");
+  F.interpFig = () => {
+    const sq = (x, y, s, op) => `<rect x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" rx="4" fill="${A}" opacity="${op}"/>`;
+    const ci = (x, y, r, op) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${A}" opacity="${op}"/>`;
+    return svg(560, 200, `${t(140, 20, "pixel average", "b")}${t(420, 20, "latent average, then decode", "b")}
+      ${sq(60, 90, 70, 1)}${t(60, 150, "A", "s")}${ci(220, 90, 40, 1)}${t(220, 150, "B", "s")}${sq(140, 90, 70, 0.45)}${ci(140, 90, 40, 0.45)}${t(140, 150, "ghost", "s")}
+      <line x1="280" y1="30" x2="280" y2="190" stroke="${RULE}"/>
+      ${sq(340, 90, 70, 1)}${t(340, 150, "A", "s")}${ci(500, 90, 40, 1)}${t(500, 150, "B", "s")}<rect x="385" y="55" width="70" height="70" rx="22" fill="${A}"/>${t(420, 150, "in-between", "s")}
+      ${t(420, 180, "every point on the path is a real shape", "s")}`, "Interpolation");
+  };
+
+  /* ---------- Week 5 ---------- */
+  F.ganArch = () => svg(560, 220, `
+    ${box(10, 30, 80, 44, "var(--warn-soft)", W)}${t(50, 50, "noise z", "b")}${t(50, 66, "~ N(0, I)", "s")}${arrow(92, 52, 125, 52)}
+    <path d="M127 25 L200 40 L200 65 L127 80Z" fill="${SOFT}" stroke="${A}"/>${t(163, 98, "generator G", "s")}${t(163, 112, "(forger)", "s")}
+    ${arrow(202, 52, 250, 52)}${box(252, 30, 80, 44, SH, B)}${t(292, 57, "fake G(z)")}
+    ${box(252, 140, 80, 44, SH, G)}${t(292, 167, "real x")}
+    ${arrow(334, 52, 380, 100)}${arrow(334, 162, 380, 118)}
+    <path d="M382 80 L450 95 L450 125 L382 140Z" fill="${SOFT}" stroke="${A}"/>${t(416, 160, "discriminator D", "s")}${t(416, 174, "(detective)", "s")}
+    ${arrow(452, 110, 485, 110)}${box(487, 85, 66, 50, H, INK)}${t(520, 107, "P(real)", "b")}${t(520, 125, "0 … 1", "s")}
+    <path d="M520 140 Q520 210 163 205 L163 120" fill="none" stroke="${G}" stroke-width="2" stroke-dasharray="5 4"/>${t(340, 215, "D's verdict flows back to teach G", "s")}`, "GAN architecture");
+  F.ganSaturate = () => {
+    const X = (d) => 50 + d * 470, Y = (v) => 110 - v * 22;
+    return svg(560, 220, `<line x1="50" y1="${Y(0)}" x2="530" y2="${Y(0)}" stroke="${RULE}"/><line x1="50" y1="10" x2="50" y2="210" stroke="${RULE}"/>
+      <path d="${curve((d) => -Math.log(d), 0.012, 0.99, X, Y)}" fill="none" stroke="${A}" stroke-width="3"/>
+      <path d="${curve((d) => Math.log(1 - d), 0.01, 0.985, X, Y)}" fill="none" stroke="${H}" stroke-width="3"/>
+      ${[0, 0.5, 1].map((v) => t(X(v), 214, v, "s")).join("")}${t(530, 200, "D(G(z)) →", "s", "end")}
+      ${t(X(0.07), Y(2.9), "−log D(G(z)): steep at 0", "s", "start")}${t(X(0.12), Y(-0.6) + 16, "log(1 − D(G(z))): flat at 0", "s", "start")}
+      <circle cx="${X(0.03)}" cy="${Y(Math.log(0.97))}" r="6" fill="none" stroke="${B}" stroke-width="2"/>${t(X(0.5), 26, "early training: D(G(z)) ≈ 0", "b")}`, "Saturating vs non-saturating");
+  };
+  F.modeCollapse = () => {
+    const digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    const row = (y, arr, lab) => t(10, y + 26, lab, "b", "start") + arr.map((d, i) => `${box(140 + i * 40, y, 34, 40, SH, RULE, 6)}${t(157 + i * 40, y + 27, d, "b")}`).join("");
+    return svg(560, 120, row(10, digits, "real data") + row(65, ["1", "7", "1", "1", "7", "1", "7", "7", "1", "7"], "collapsed G"), "Mode collapse");
+  };
+  F.dcganShapes = () => {
+    const sizes = [[4, 1024], [8, 512], [16, 256], [32, 128], [64, 3]];
+    let g = `${box(5, 85, 50, 40, "var(--warn-soft)", W)}${t(30, 110, "z(100)", "s")}`;
+    let x = 70;
+    sizes.forEach(([n, c], i) => { const h = 20 + n * 1.9, w = 14 + Math.min(60, c / 16); g += `${arrow(x - 12, 105, x - 2, 105)}<rect x="${x}" y="${105 - h / 2}" width="${w}" height="${h}" fill="${i === 4 ? H : SOFT}" stroke="${A}"/>${t(x + w / 2, 105 + h / 2 + 16, `${n}×${n}×${c}`, "s")}`; x += w + 26; });
+    g += t(280, 20, "each transposed-conv block doubles height and width, halves depth", "s");
+    return svg(560, 230, g, "DCGAN generator shapes");
+  };
 })();
