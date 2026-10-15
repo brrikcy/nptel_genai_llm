@@ -489,8 +489,8 @@ body.gfocus .shell { grid-template-columns: minmax(0, 1fr); }
 .achip:disabled { cursor: default; }
 .amatch { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 12px; }
 .acol { display: flex; flex-direction: column; gap: 10px; }
-.achip.term { font-weight: 700; text-align: center; }
-.achip.def { font-size: .86rem; }
+.achip.aterm { font-weight: 700; text-align: center; }
+.achip.adef { font-size: .86rem; }
 .ablank-s { font-size: 1.1rem; line-height: 2; }
 .ablank { display: inline-block; min-width: 90px; border-bottom: 3px solid var(--ink-2); padding: 0 6px; text-align: center; font-weight: 700; }
 .ablank.filled { border-color: #1cb0f6; color: #1590c9; } .ablank.ok { border-color: #58cc02; color: var(--good); } .ablank.no { border-color: #ff4b4b; color: var(--bad); }

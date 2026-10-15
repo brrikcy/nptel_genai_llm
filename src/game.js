@@ -341,8 +341,8 @@
       function inner(a, checked, ok) {
         const st = a.st;
         if (a.act === "match") return `<span class="qtype">Match the pairs</span><div class="gq">Tap a term, then its meaning</div>
-          <div class="amatch"><div class="acol">${st.L.map((k) => `<button type="button" class="achip term ${st.done.has(k) ? "ok" : ""}" data-side="L" data-k="${k}" ${st.done.has(k) || checked ? "disabled" : ""}>${a.pairs[k].term}</button>`).join("")}</div>
-          <div class="acol">${st.R.map((k) => `<button type="button" class="achip def ${st.done.has(k) ? "ok" : ""}" data-side="R" data-k="${k}" ${st.done.has(k) || checked ? "disabled" : ""}>${a.pairs[k].def}</button>`).join("")}</div></div>`;
+          <div class="amatch"><div class="acol">${st.L.map((k) => `<button type="button" class="achip aterm ${st.done.has(k) ? "ok" : ""}" data-side="L" data-k="${k}" ${st.done.has(k) || checked ? "disabled" : ""}>${a.pairs[k].term}</button>`).join("")}</div>
+          <div class="acol">${st.R.map((k) => `<button type="button" class="achip adef ${st.done.has(k) ? "ok" : ""}" data-side="R" data-k="${k}" ${st.done.has(k) || checked ? "disabled" : ""}>${a.pairs[k].def}</button>`).join("")}</div></div>`;
         if (a.act === "blank") return `<span class="qtype">Fill the blank</span><div class="gq">Complete the exam key point</div>
           <div class="ablank-s">${a.pre}<span class="ablank ${checked ? (ok ? "ok" : "no") : st.pick ? "filled" : ""}">${st.pick || "&nbsp;"}</span>${a.post}</div>
           <div class="abank">${st.opts.map((w) => `<button type="button" class="achip ${st.pick === w ? "sel" : ""}" data-w="${A.esc(w)}" data-ok="${w === a.answer ? 1 : 0}" ${checked ? "disabled" : ""}>${A.esc(w)}</button>`).join("")}</div>`;
