@@ -906,7 +906,7 @@
         <div class="topic-head"><span class="eyebrow">Last 30 minutes of the plan, and the night before the exam</span><h1>Formula &amp; fact sheet</h1>
         <p class="muted" style="max-width:65ch">Everything numerical or definitional that the lectures lean on, in one place. Cover the right side of each line and recite it.</p>
         <div class="row"><button class="btn ${S.revDone ? "quiet" : ""}" id="revdone">${S.revDone ? "✓ Revision marked done" : "Mark final revision done"}</button></div></div>
-        <div class="fsheet">${(COURSE.formulas || []).map((f) => `<div class="card flat"><span class="eyebrow">${f.w}</span><h3>${f.h}</h3>${f.items.map(([a, b]) => `<div><div class="small muted">${a}</div><div class="eq">${b}</div></div>`).join("")}</div>`).join("")}</div>
+        <div class="fsheet">${(COURSE.formulas || []).map((f) => `<div class="card flat"><span class="eyebrow">${f.w}</span><h3>${f.h}</h3>${f.items.map(([a, b, c]) => `<div><div class="small muted">${a}</div><div class="eq">${b}${c ? `<div class="eqnote">${c}</div>` : ""}</div></div>`).join("")}</div>`).join("")}</div>
       </div>`;
     $("#revdone").onclick = () => { S.revDone = !S.revDone; save(); rerender(); };
   }

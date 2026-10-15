@@ -7,7 +7,22 @@
   const RE = /\$\$([\s\S]+?)\$\$|\\\$|\$([^$\n]+?)\$/g;
   const cache = new Map();
 
+  /* Inline fractions: draw top-level \frac in full size (\dfrac) so numerator and denominator stay readable.
+     Fractions inside braces (exponents, subscripts, other fractions) keep the normal size. */
+  function bigFrac(src) {
+    let out = "", depth = 0;
+    for (let i = 0; i < src.length; i++) {
+      const c = src[i];
+      if (c === "\\" && depth === 0 && src.startsWith("\\frac", i) && !/[a-zA-Z]/.test(src[i + 5] || "")) { out += "\\dfrac"; i += 4; continue; }
+      if (c === "\\") { out += c + (src[i + 1] || ""); i++; continue; }
+      if (c === "{") depth++; else if (c === "}") depth--;
+      out += c;
+    }
+    return out;
+  }
+
   function tex(src, display) {
+    if (!display && src.indexOf("\\frac") >= 0) src = bigFrac(src);
     const k = (display ? "D" : "I") + src;
     let h = cache.get(k);
     if (h == null) {
