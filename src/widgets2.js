@@ -14,9 +14,9 @@
 
   /* 17. Forward diffusion */
   W.diffusion = (el) => {
-    const b = U.box(el, "Forward diffusion: destroy an image on schedule", "x_t = √ᾱ_t · x₀ + √(1 − ᾱ_t) · ε. Slide t from 0 to T = 1000 and compare the linear and cosine noise schedules.");
-    b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("s", [["linear", "Linear β schedule"], ["cosine", "Cosine schedule"]], "linear")}</div><div class="ctrls">${U.range("t", "Time step t", 0, 1000, 10, 250)}</div>
-      <div class="row" style="gap:18px;align-items:flex-start"><div><div class="eyebrow">x_t</div><canvas width="128" height="128" class="wcanvas cv" style="width:168px;margin-top:6px;image-rendering:pixelated"></canvas></div><div style="flex:1;min-width:240px"><div class="eyebrow">ᾱ_t (signal kept) over time</div><div class="plot"></div></div></div><div class="readout"></div>`);
+    const b = U.box(el, "Forward diffusion: ruin an image on schedule", R`$x_t = \sqrt{\bar{\alpha}_t}\,x_0 + \sqrt{1 - \bar{\alpha}_t}\,\varepsilon$. Slide $t$ from 0 to $T = 1000$ and compare the linear and cosine noise schedules.`);
+    b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("s", [["linear", "Linear β schedule"], ["cosine", "Cosine schedule"]], "linear")}</div><div class="ctrls">${U.range("t", R`Time step $t$`, 0, 1000, 10, 250)}</div>
+      <div class="row" style="gap:18px;align-items:flex-start"><div><div class="eyebrow">noisy image</div><canvas width="128" height="128" class="wcanvas cv" style="width:168px;margin-top:6px;image-rendering:pixelated"></canvas></div><div style="flex:1;min-width:240px"><div class="eyebrow">alpha-bar (signal kept) over time</div><div class="plot"></div></div></div><div class="readout"></div>`);
     const N = 32; const x0 = []; const r = U.rng(11); const eps = [];
     for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { let v = -0.85; if (i > 18) v = 0.2; if (Math.hypot(i - 9, j - 22) < 5) v = 0.95; if (i > 12 && i <= 18 && Math.abs(j - 10) < 7 - (18 - i) * 0 && j > 3 && j < 17) v = 0.6; if (i > 6 && i <= 12 && Math.abs(j - 10) < i - 5) v = 0.85; x0.push(v); eps.push(U.gauss(r)); }
     const S = { linear: schedule("linear", 1000), cosine: schedule("cosine", 1000) };
@@ -28,7 +28,7 @@
       const p = U.plot({ x0: 0, x1: 1000, y0: 0, y1: 1, h: 170 });
       let dL = "", dC = ""; for (let k = 0; k <= 1000; k += 10) { const a1 = k ? S.linear.abar[k - 1] : 1, a2 = k ? S.cosine.abar[k - 1] : 1; dL += (dL ? "L" : "M") + p.X(k) + "," + p.Y(a1); dC += (dC ? "L" : "M") + p.X(k) + "," + p.Y(a2); }
       b.querySelector(".plot").innerHTML = p.svg(p.frame([0, 250, 500, 750, 1000], [0, 0.5, 1]) + p.line(dL, C1, s.s === "linear" ? "" : 'opacity="0.35"') + p.line(dC, C2, s.s === "cosine" ? "" : 'opacity="0.35"') + `<line x1="${p.X(t)}" x2="${p.X(t)}" y1="${p.padT}" y2="${p.Y(0)}" stroke="var(--ink)" stroke-dasharray="3 3"/>`) + `<div class="legend"><span><i style="background:${C1}"></i>linear</span><span><i style="background:${C2}"></i>cosine</span></div>`;
-      b.querySelector(".readout").innerHTML = `t = ${t} · β_t = <b>${U.f(bt, 5)}</b> · ᾱ_t = Π(1 − β_s) = <b>${U.f(ab, 4)}</b><br>signal weight √ᾱ_t = ${U.f(Math.sqrt(ab), 3)} · noise weight √(1−ᾱ_t) = ${U.f(Math.sqrt(1 - ab), 3)} · SNR = ᾱ/(1−ᾱ) = ${ab >= 1 ? "∞" : U.f(ab / (1 - ab), 3)}<br><span class="muted">The forward process has no learned parameters. Thanks to the closed form you can jump straight to any t without simulating the steps in between. The cosine schedule destroys information more evenly, so fewer late steps are wasted on pure noise.</span>`;
+      b.querySelector(".readout").innerHTML = R`$t = ${t}$ · $\beta_t = ${U.f(bt, 5)}$ · $\bar{\alpha}_t = \prod_s (1 - \beta_s) = ${U.f(ab, 4)}$<br>signal weight $\sqrt{\bar{\alpha}_t} = ${U.f(Math.sqrt(ab), 3)}$ · noise weight $\sqrt{1-\bar{\alpha}_t} = ${U.f(Math.sqrt(1 - ab), 3)}$ · $\text{SNR} = \frac{\bar{\alpha}_t}{1-\bar{\alpha}_t} = ${ab >= 1 ? "\\infty" : U.f(ab / (1 - ab), 3)}$<br><span class="muted">The forward process has no learned parts. Thanks to the shortcut formula you can jump straight to any $t$. The cosine schedule ruins information more evenly, so fewer late steps are wasted on pure noise.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };

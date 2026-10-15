@@ -335,4 +335,33 @@
     g += `${arrow(492, 145, 512, 145)}${t(535, 150, "face", "b")}${t(330, 90, "style w steers every layer", "s")}`;
     return svg(560, 205, g, "StyleGAN");
   };
+
+  /* ---------- Week 7 ---------- */
+  const noisyFace = (cx, cy, k, seed) => {
+    let s0 = seed; const r = () => ((s0 = (s0 * 1664525 + 1013904223) >>> 0) / 4294967296);
+    let g = `<g opacity="${1 - k * 0.85}">${smiley(cx, cy, 30, 1)}</g>`;
+    for (let i = 0; i < Math.round(k * 90); i++) g += `<rect x="${cx - 38 + r() * 76}" y="${cy - 38 + r() * 76}" width="4" height="4" fill="${r() > 0.5 ? INK : MUTE}" opacity="${0.4 + 0.6 * r()}"/>`;
+    return `<rect x="${cx - 40}" y="${cy - 40}" width="80" height="80" rx="6" fill="${SH}" stroke="${RULE}"/>` + g;
+  };
+  F.diffusionChain = () => {
+    const ks = [0, 0.3, 0.6, 0.85, 1];
+    let g = ks.map((k, i) => noisyFace(60 + i * 110, 80, k, 7 + i) + t(60 + i * 110, 138, ["x₀ (clean)", "x₂₅₀", "x₅₀₀", "x₇₅₀", "x_T (noise)"][i], "s")).join("");
+    g += `<path d="M60 160 L500 160" stroke="${B}" stroke-width="2.5"/>${arrow(490, 160, 505, 160, B)}${t(280, 176, "forward q: add a little noise each step (fixed)", "s")}`;
+    g += `<path d="M500 22 L60 22" stroke="${G}" stroke-width="2.5"/>${arrow(70, 22, 55, 22, G)}${t(280, 15, "reverse p_θ: remove a little noise each step (learned)", "s")}`;
+    return svg(560, 185, g, "Diffusion chain");
+  };
+  F.scheduleFig = () => {
+    const T = 1000, X = (k) => 50 + (k / T) * 470, Y = (v) => 170 - v * 150;
+    let ab = 1, dL = ""; for (let k = 0; k <= T; k += 5) { if (k) for (let j = k - 4; j <= k; j++) ab *= 1 - (1e-4 + (0.02 - 1e-4) * (j - 1) / (T - 1)); dL += (dL ? "L" : "M") + X(k).toFixed(1) + "," + Y(ab).toFixed(1); }
+    const f = (k) => Math.cos(((k / T + 0.008) / 1.008) * Math.PI / 2) ** 2 / Math.cos((0.008 / 1.008) * Math.PI / 2) ** 2;
+    return svg(560, 200, `<line x1="50" y1="170" x2="530" y2="170" stroke="${INK}"/><line x1="50" y1="15" x2="50" y2="170" stroke="${INK}"/>
+      <path d="${dL}" fill="none" stroke="${A}" stroke-width="3"/><path d="${curve(f, 0, T, X, Y)}" fill="none" stroke="${H}" stroke-width="3"/>
+      ${[0, 250, 500, 750, 1000].map((k) => t(X(k), 188, k, "s")).join("")}${t(40, 24, "1", "s", "end")}${t(40, 172, "0", "s", "end")}
+      ${t(X(240), Y(0.45), "linear", "b", "start")}${t(X(560), Y(0.55), "cosine", "b", "start")}${t(290, 200, "", "s")}${t(530, 160, "t →", "s", "end")}${t(58, 30, "ᾱ_t: share of the image that survives", "s", "start")}`, "Noise schedules");
+  };
+  F.ddpmLoops = () => svg(560, 230, `
+    ${box(5, 10, 265, 210, "var(--sheet)", A)}${t(137, 32, "TRAINING (any order)", "b")}
+    ${["pick a clean x₀", "pick a random step t", "draw noise ε ~ N(0, I)", "x_t = √ᾱ_t x₀ + √(1−ᾱ_t) ε", "network guesses ε from (x_t, t)", "loss = (ε − guess)², update"].map((s, i) => `${t(20, 60 + i * 26, `${i + 1}. ${s}`, "s", "start")}`).join("")}
+    ${box(290, 10, 265, 210, "var(--sheet)", G)}${t(422, 32, "GENERATING (in order)", "b")}
+    ${["start from pure noise x_T", "for t = T, T−1, …, 1:", "   guess the noise in x_t", "   remove a bit of it → x_{t−1}", "   (add fresh noise, except at t = 1)", "return x₀: a new image"].map((s, i) => `${t(305, 60 + i * 26, i ? s : `1. ${s}`, "s", "start")}`).join("")}`, "DDPM training and sampling");
 })();

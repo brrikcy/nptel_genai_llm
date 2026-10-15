@@ -9,7 +9,7 @@
     el.innerHTML = `<div class="widget"><div class="widget-h"><h3>${title}</h3><span class="chip acc">Try it</span></div><div class="widget-b">${note ? `<p class="small muted">${note}</p>` : ""}</div></div>`;
     return el.querySelector(".widget-b");
   };
-  U.range = (k, label, min, max, step, val) => { const id = "w" + ++UID; return `<div class="ctrl"><label for="${id}">${label}<output data-o="${k}">${val}</output></label><input type="range" id="${id}" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`; };
+  U.range = (k, label, min, max, step, val) => { const id = "w" + ++UID; return `<div class="ctrl"><label for="${id}"><span>${label}</span><output data-o="${k}">${val}</output></label><input type="range" id="${id}" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`; };
   U.seg = (k, opts, val) => `<div class="seg" data-seg="${k}">${opts.map(([v, l]) => `<button type="button" data-v="${v}" class="${v == val ? "on" : ""}">${l}</button>`).join("")}</div>`;
   U.bind = (root, onChange, fmt = {}) => {
     const st = {};

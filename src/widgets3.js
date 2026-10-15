@@ -310,4 +310,71 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- Week 7 ---------- */
+  const linSched = (T, b0, b1) => { const beta = [], abar = []; let a = 1; for (let i = 0; i < T; i++) { const b = b0 + ((b1 - b0) * i) / (T - 1); beta.push(b); a *= 1 - b; abar.push(a); } return { beta, abar }; };
+
+  /* Covariance: drag the relationship between two variables */
+  W.covar = (el) => {
+    const b = U.box(el, "Covariance: do two things move together?", "Slide the link between X and Y. Each dot is one person (or one pair of neighbouring pixels). Watch the cloud tilt and the covariance change sign.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("rho", "Strength of the link", -0.95, 0.95, 0.05, 0.7)}${U.range("sy", "Spread of Y", 0.5, 2, 0.1, 1)}</div><div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const r = U.rng(5), pts = [];
+      for (let i = 0; i < 160; i++) { const a = U.gauss(r), c = U.gauss(r); pts.push([a, s.sy * (s.rho * a + Math.sqrt(1 - s.rho * s.rho) * c)]); }
+      const mx = pts.reduce((t, p) => t + p[0], 0) / pts.length, my = pts.reduce((t, p) => t + p[1], 0) / pts.length;
+      const vx = pts.reduce((t, p) => t + (p[0] - mx) ** 2, 0) / pts.length, vy = pts.reduce((t, p) => t + (p[1] - my) ** 2, 0) / pts.length, cv = pts.reduce((t, p) => t + (p[0] - mx) * (p[1] - my), 0) / pts.length;
+      const p = U.plot({ x0: -3.5, x1: 3.5, y0: -4, y1: 4, w: 360, h: 300 });
+      let g = p.frame([-3, 0, 3], [-3, 0, 3], "X", "Y");
+      pts.forEach(([x, y]) => (g += `<circle cx="${p.X(x)}" cy="${p.Y(y)}" r="3.2" fill="var(--accent)" opacity=".6" clip-path="url(#${p.cid})"/>`));
+      b.querySelector(".plot").innerHTML = `<div style="max-width:360px;margin:auto">${p.svg(g)}</div>`;
+      b.querySelector(".readout").innerHTML = R`$\text{Var}(X) = ${U.f(vx, 2)}$, $\text{Var}(Y) = ${U.f(vy, 2)}$, $\text{Cov}(X, Y) = ${U.f(cv, 2)}$ → ${cv > 0.15 ? "positive: they rise together" : cv < -0.15 ? "negative: one rises as the other falls" : "about zero: unrelated"}<br>Covariance matrix $\Sigma = \begin{bmatrix} ${U.f(vx, 2)} & ${U.f(cv, 2)} \\ ${U.f(cv, 2)} & ${U.f(vy, 2)} \end{bmatrix}$ (symmetric)<br><span class="muted">Diffusion noise is the zero-link case: every pixel's noise is independent, so its covariance matrix is $\beta I$.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* The forward shortcut on a picture and on one pixel */
+  W.noiseimg = (el) => {
+    const b = U.box(el, "The shortcut, one pixel at a time", R`Pick a step $t$ (linear schedule, $T = 1000$). The strip shows the whole picture at $t = 0, 100, 300, 600, 999$, like the hands-on notebook. Below, follow one pixel: its value $x_0$, a noise draw $\varepsilon$, and the result $x_t$.`);
+    b.insertAdjacentHTML("beforeend", `<canvas width="560" height="112" class="wcanvas strip" style="aspect-ratio:560/112"></canvas><div class="ctrls">${U.range("t", R`Step $t$`, 0, 999, 1, 300)}${U.range("x0", R`Pixel value $x_0$ (scaled to $[-1, 1]$)`, -1, 1, 0.1, 0.8)}${U.range("e", R`Noise draw $\varepsilon$`, -2.5, 2.5, 0.1, 0.5)}</div><div class="plot"></div><div class="readout"></div>`);
+    const S = linSched(1000, 1e-4, 0.02), N = 24, r = U.rng(9), img = [], eps = [];
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const x = (j - 11.5) / 11.5, y = (i - 11.5) / 11.5, rr = Math.hypot(x, y); let v = rr < 0.95 ? 0.6 : -0.9; if (Math.hypot(x + 0.35, y + 0.3) < 0.14 || Math.hypot(x - 0.35, y + 0.3) < 0.14) v = -0.9; if (y > 0.15 && y < 0.55 && Math.abs(x) < 0.5 && Math.abs(y - (0.5 - 0.55 * x * x)) < 0.1) v = -0.9; img.push(v); eps.push(U.gauss(r)); }
+    const draw = (s) => {
+      const ctx = b.querySelector(".strip").getContext("2d"); ctx.fillStyle = U.css("--sheet-2"); ctx.fillRect(0, 0, 560, 112);
+      [0, 100, 300, 600, 999].forEach((tt, k) => { const ab = tt ? S.abar[tt] : 1; const d = ctx.createImageData(N, N); img.forEach((v, i) => { const x = Math.sqrt(ab) * v + Math.sqrt(1 - ab) * eps[i]; const c = Math.max(0, Math.min(255, (x + 1) * 127.5)); d.data[4 * i] = c; d.data[4 * i + 1] = c * 0.9; d.data[4 * i + 2] = c * 0.6; d.data[4 * i + 3] = 255; }); const off = document.createElement("canvas"); off.width = N; off.height = N; off.getContext("2d").putImageData(d, 0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 10 + k * 110, 4, 88, 88); ctx.fillStyle = U.css("--ink"); ctx.font = "12px monospace"; ctx.textAlign = "center"; ctx.fillText("t = " + tt, 54 + k * 110, 106); });
+      const ab = s.t ? S.abar[s.t] : 1, sig = Math.sqrt(ab) * s.x0, noi = Math.sqrt(1 - ab) * s.e;
+      const W0 = 220, Xc = (v) => 280 + v * 60;
+      const bar = (y, v, col, lab) => `<rect x="${Math.min(Xc(0), Xc(v))}" y="${y}" width="${Math.abs(Xc(v) - Xc(0))}" height="18" fill="${col}" rx="3"/><text x="${Xc(0) - 8}" y="${y + 14}" text-anchor="end">${lab}</text><text x="${Xc(v) + (v >= 0 ? 6 : -6)}" y="${y + 14}" text-anchor="${v >= 0 ? "start" : "end"}">${U.f(v, 3)}</text>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 560 100"><line x1="${Xc(0)}" y1="0" x2="${Xc(0)}" y2="100" stroke="var(--rule)"/>${bar(8, sig, "var(--accent)", "signal")}${bar(38, noi, "var(--hi)", "noise")}${bar(68, sig + noi, "var(--good)", "x_t")}</svg>`;
+      b.querySelector(".readout").innerHTML = R`$\bar{\alpha}_{${s.t}} = ${U.f(ab, 4)}$ · $x_t = \sqrt{${U.f(ab, 3)}}\,(${s.x0}) + \sqrt{${U.f(1 - ab, 3)}}\,(${s.e}) = ${U.f(sig, 3)} + ${U.f(noi, 3)} = ${U.f(sig + noi, 3)}$<br><span class="muted">Early on the signal bar dominates; by the end the noise bar does, whatever the pixel started as.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Reverse diffusion in 1-D: noise flows into the data's two clusters */
+  W.reverse1d = (el) => {
+    const b = U.box(el, "Reverse diffusion in one dimension", R`The “data” is two clusters, at $-1$ and $+1$. Start 300 points as pure noise ($t = T$) and run the reverse steps. Each step uses the ideal noise guess for this data, removes a little noise, and adds a little fresh noise (except at the end). Watch the noise split into the two clusters.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("k", "Reverse steps taken", 0, 100, 1, 0)}</div><div class="row"><button class="btn small" data-act="play">Run all steps</button><button class="btn ghost small" data-act="new">New noise</button></div><div class="plot"></div><div class="readout"></div>`);
+    const T = 100, S = linSched(T, 1e-3, 0.2); let seed = 21, timer = null, st;
+    const run = (k) => {
+      const r = U.rng(seed); let xs = Array.from({ length: 300 }, () => U.gauss(r));
+      for (let i = 0; i < k; i++) {
+        const t = T - 1 - i, ab = S.abar[t], abPrev = t ? S.abar[t - 1] : 1, be = S.beta[t], al = 1 - be;
+        xs = xs.map((x) => { const x0h = Math.tanh((Math.sqrt(ab) * x) / (1 - ab)); const epsh = (x - Math.sqrt(ab) * x0h) / Math.sqrt(1 - ab); const mean = (x - (be / Math.sqrt(1 - ab)) * epsh) / Math.sqrt(al); const sd = t ? Math.sqrt(((1 - abPrev) / (1 - ab)) * be) : 0; return mean + sd * U.gauss(r); });
+      }
+      return xs;
+    };
+    const draw = () => {
+      const xs = run(st.k), p = U.plot({ x0: -3, x1: 3, y0: 0, y1: 1.6, h: 210 });
+      const bins = new Array(48).fill(0); xs.forEach((x) => { const i = Math.floor((x + 3) / 0.125); if (i >= 0 && i < 48) bins[i]++; });
+      let g = p.frame([-3, -2, -1, 0, 1, 2, 3], [0], "x", "");
+      bins.forEach((c, i) => { const h = c / xs.length / 0.125; g += `<rect x="${p.X(-3 + i * 0.125) + 0.5}" y="${p.Y(Math.min(1.6, h))}" width="${p.X(0.125) - p.X(0) - 1}" height="${p.Y(0) - p.Y(Math.min(1.6, h))}" fill="var(--accent)" opacity=".7"/>`; });
+      [-1, 1].forEach((m) => (g += `<line x1="${p.X(m)}" y1="${p.padT}" x2="${p.X(m)}" y2="${p.Y(0)}" stroke="var(--good)" stroke-width="2" stroke-dasharray="5 4"/>`));
+      b.querySelector(".plot").innerHTML = p.svg(g) + `<div class="legend"><span><i style="background:var(--accent)"></i>the 300 points</span><span><i style="background:var(--good)"></i>where the real data lives</span></div>`;
+      const t = T - st.k, near = xs.filter((x) => Math.abs(Math.abs(x) - 1) < 0.25).length;
+      b.querySelector(".readout").innerHTML = R`Now at step $t = ${t}$ of ${T}. ${st.k === 0 ? R`Pure noise: $x_T \sim \mathcal{N}(0, 1)$.` : ""} Points within $0.25$ of a cluster: ${Math.round((100 * near) / xs.length)}%.<br><span class="muted">A real model does not know the ideal noise guess; the network $\varepsilon_\theta(x_t, t)$ learns to approximate it from training data.</span>`;
+    };
+    st = U.bind(b, draw);
+    b.addEventListener("click", (e) => { const a = e.target.closest("[data-act]"); if (!a) return; if (a.dataset.act === "new") { seed++; draw(); return; } clearInterval(timer); const inp = b.querySelector("[data-k=k]"); let k = 0; timer = setInterval(() => { if (!inp.isConnected || k > 100) { clearInterval(timer); return; } inp.value = k; inp.dispatchEvent(new Event("input")); k += 4; }, 60); });
+    draw();
+  };
 })();
