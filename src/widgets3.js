@@ -507,4 +507,54 @@
     };
     const st = U.bind(b, draw); draw(st);
   };
+
+  /* ---------- Week 12 ---------- */
+
+  /* CLIP zero-shot: compare one picture with a caption for every class */
+  W.clipmatch = (el) => {
+    const b = U.box(el, "CLIP picks the caption that matches the picture best", "Pick a picture, then pick the list of class names. CLIP turns every caption “a photo of a …” into a vector and compares it with the picture's vector. The highest similarity wins, so no extra training is needed for new classes.");
+    const IMG = { dog: "🐶", cat: "🐱", car: "🚗", pizza: "🍕", horse: "🐴" };
+    const LAB = ["dog", "cat", "car", "pizza", "horse"];
+    const SIM = { dog: [0.31, 0.25, 0.17, 0.15, 0.24], cat: [0.24, 0.32, 0.16, 0.16, 0.19], car: [0.15, 0.14, 0.33, 0.15, 0.17], pizza: [0.14, 0.15, 0.15, 0.34, 0.13], horse: [0.25, 0.19, 0.18, 0.13, 0.32] };
+    b.insertAdjacentHTML("beforeend", `${U.seg("img", Object.keys(IMG).map((k) => [k, IMG[k] + " " + k]), "dog")}${U.seg("set", [["4", "classes: dog, cat, car, pizza"], ["5", "add a new class: horse"]], "4")}<div class="plot"></div><div class="readout"></div>`);
+    const draw = (s) => {
+      const n = +s.set, sims = SIM[s.img].slice(0, n);
+      const ex = sims.map((v) => Math.exp(100 * v)), Z = ex.reduce((a, c) => a + c, 0), p = ex.map((v) => v / Z);
+      const best = p.indexOf(Math.max(...p));
+      let g = `<text x="36" y="${16 + n * 15}" style="font-size:46px" text-anchor="middle">${IMG[s.img]}</text>`;
+      LAB.slice(0, n).forEach((l, i) => { const y = 14 + i * 30, w = 210 * p[i];
+        g += `<text x="90" y="${y + 15}" class="s">“a photo of a ${l}”</text><text x="300" y="${y + 15}" class="s" text-anchor="end">${f2(sims[i])}</text><rect x="310" y="${y + 2}" width="${Math.max(w, 1)}" height="18" rx="3" fill="${i === best ? C3 : C1}" fill-opacity="${i === best ? 0.8 : 0.35}"/><text x="${316 + w}" y="${y + 15}" class="s">${Math.round(100 * p[i])}%</text>`; });
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 580 ${20 + n * 30}"><text x="300" y="10" class="s" text-anchor="end">similarity</text>${g}</svg>`;
+      const miss = s.img === "horse" && n === 4;
+      b.querySelector(".readout").innerHTML = `Answer: <b>${LAB[best]}</b> (${Math.round(100 * p[best])}%). ` + (miss ? `<span class="muted">Wrong! “horse” is not in the list, so CLIP can only choose the closest caption it was given. Click “add a new class: horse”: you only add a caption, with no retraining.</span>` : R`<span class="muted">Probabilities come from a softmax over the similarities times 100. Because of the “times 100”, small gaps in similarity become big gaps in probability.</span>$$p_i = \frac{e^{100\, s_i}}{\sum_j e^{100\, s_j}}$$`);
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Fairness: one model, two groups, two thresholds */
+  W.fairness = (el) => {
+    const b = U.box(el, "Is this hiring model fair? Check two fairness rules", "100 applicants per group; 50 in each group truly qualify (filled dots = selected, green = truly qualified). The biased model gives group B lower scores. Move the bias and the selection cut-offs and watch both fairness rules.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("bias", "Score bias against group B", 0, 30, 1, 12)}${U.range("ta", "Cut-off score for group A", 20, 90, 1, 55)}${U.range("tb", "Cut-off score for group B", 20, 90, 1, 55)}</div><div class="plot"></div><div class="readout"></div>`);
+    const r = U.rng(7), base = [];
+    for (let i = 0; i < 100; i++) base.push((i < 50 ? 62 : 38) + 14 * U.gauss(r));
+    const draw = (s) => {
+      const res = ["A", "B"].map((gname, gi) => {
+        const t = gi ? s.tb : s.ta, sc = base.map((v) => v - (gi ? s.bias : 0));
+        const sel = sc.map((v) => v >= t), q = sc.map((_, i) => i < 50);
+        const nSel = sel.filter(Boolean).length, tp = sel.filter((x, i) => x && q[i]).length, fp = sel.filter((x, i) => x && !q[i]).length;
+        return { sel, q, rate: nSel / 100, tpr: tp / 50, fpr: fp / 50 };
+      });
+      let g = "";
+      res.forEach((R0, gi) => { g += `<text x="4" y="${30 + gi * 70}" class="b">Group ${gi ? "B" : "A"}</text>`;
+        for (let i = 0; i < 100; i++) { const x = 80 + (i % 50) * 9.6, y = 16 + gi * 70 + Math.floor(i / 50) * 18, col = R0.q[i] ? C3 : C4;
+          g += `<circle cx="${x}" cy="${y}" r="3.8" fill="${R0.sel[i] ? col : "none"}" stroke="${col}" stroke-width="1.3"/>`; } });
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 570 150">${g}</svg>`;
+      const [A, B] = res, dp = Math.abs(A.rate - B.rate), eo = Math.abs(A.tpr - B.tpr);
+      const ok = (d) => (d <= 0.05 ? `<b style="color:var(--good)">holds</b>` : `<b style="color:var(--bad)">broken</b>`);
+      b.querySelector(".readout").innerHTML = R`<div>Selection rate: $P(\hat{y} = 1 \mid A) = ${f2(A.rate)}$, $P(\hat{y} = 1 \mid B) = ${f2(B.rate)}$ → demographic parity ${ok(dp)} (gap ${f2(dp)}).</div>
+        <div>True-positive rate (qualified people selected): A $= ${f2(A.tpr)}$, B $= ${f2(B.tpr)}$ → equal opportunity ${ok(eo)} (gap ${f2(eo)}).</div>
+        <div class="muted small">Try: set the bias to 0 and both cut-offs equal, and both rules hold. With bias, lowering group B's cut-off can repair one rule, but it may not repair both at once. Choosing which rule to satisfy is a value judgement.</div>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();

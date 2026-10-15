@@ -501,6 +501,43 @@
     ${box(405, 70, 140, 60, SH, INK)}${t(475, 94, "tools", "b")}${t(475, 114, "search · SQL · web", "s")}
     <path d="M400 130 Q330 185 250 125" fill="none" stroke="${G}" stroke-width="2"/>${arrow(258, 132, 248, 124, G)}${t(325, 182, "observation: the result", "s")}`, "Agent loop");
 
+  /* ---------- Week 12 ---------- */
+  F.llmFlow = () => {
+    const st = [["text", "“The cat sat”"], ["tokens", "The·cat·sat"], ["embed", "a vector each"], ["Transformer", "N layers"], ["logits", "1 score/token"], ["softmax", "probabilities"], ["pick", "“on”"]];
+    let g = "";
+    st.forEach(([n, s], i) => { const x = 4 + i * 88; g += `${box(x, 20, 82, 56, i === 3 ? SOFT : i === 6 ? "var(--good-soft)" : SH, i === 3 ? A : i === 6 ? G : RULE, 6)}${t(x + 41, 44, n, "b")}${t(x + 41, 62, s, "s")}${i < st.length - 1 ? arrow(x + 82, 48, x + 88, 48) : ""}`; });
+    g += `<path d="M573 78 Q573 104 310 104 Q45 104 45 80" fill="none" stroke="${W}" stroke-width="1.8" stroke-dasharray="5 4"/>${t(310, 126, "add the picked token to the text and repeat, one token at a time", "s")}`;
+    return svg(624, 136, g, "How an LLM produces the next token");
+  };
+  F.samplingBar = () => {
+    const p = [["car", 0.3, A], ["dog", 0.25, G], ["cat", 0.4, W], ["quantum", 0.05, B]];
+    const X = (v) => 30 + v * 500;
+    let g = "", c = 0;
+    p.forEach(([n, v, col], i) => { g += `<rect x="${X(c)}" y="40" width="${v * 500}" height="40" fill="${col}" fill-opacity=".3" stroke="${col}"/>${t(X(c + v / 2), 64, i === 3 ? "" : n, "s")}${t(X(c + v / 2), 98, v.toFixed(2), "s")}${i === 3 ? "" : t(X(c), 30, c.toFixed(2), "s")}`; c += v; });
+    g += t(X(1), 30, "1.00", "s") + t(X(0.975), 116, "quantum", "s");
+    [[0.57, "U = 0.57 lands in “cat”"], [0.32, "U = 0.32 lands in “dog”"]].forEach(([u, l], i) => (g += `<line x1="${X(u)}" y1="36" x2="${X(u)}" y2="${128 + i * 18}" stroke="${INK}" stroke-width="2"/>${t(X(u) + 6, 132 + i * 18, l, "s", "start")}`));
+    return svg(560, 160, g, "Sampling with a random number");
+  };
+  F.mmllmFig = () => svg(560, 180, `
+    ${box(10, 20, 80, 60, "var(--warn-soft)", W)}<rect x="32" y="28" width="36" height="24" fill="var(--sheet)" stroke="${W}"/><path d="M34 50 L46 38 L54 46 L58 42 L66 50 Z" fill="${G}"/><circle cx="60" cy="35" r="3" fill="${W}"/>${t(50, 68, "picture", "s")}${arrow(90, 50, 115, 50)}
+    ${box(117, 20, 100, 60, SH, A)}${t(167, 46, "vision", "b")}${t(167, 64, "encoder (ViT)", "s")}${arrow(217, 50, 240, 50)}
+    ${box(242, 20, 90, 60, "var(--warn-soft)", W)}${t(287, 46, "projector", "b")}${t(287, 64, "(trained)", "s")}${arrow(332, 50, 360, 85)}
+    ${t(346, 50, "visual", "s", "start")}${t(346, 64, "tokens", "s", "start")}
+    ${box(10, 120, 210, 40, SH, RULE)}${t(115, 145, "text: “What is in this photo?”", "s")}${arrow(220, 140, 360, 115)}
+    ${box(362, 70, 80, 60, SOFT, A)}${t(402, 96, "LLM", "b")}${t(402, 114, "reads both", "s")}${arrow(442, 100, 458, 100)}
+    ${box(460, 75, 95, 50, "var(--good-soft)", G)}${t(507, 98, "text answer", "s")}${t(507, 114, "“a dog on grass”", "s")}`, "Multimodal LLM");
+  F.groundingFig = () => svg(560, 180, `
+    ${box(10, 10, 260, 160, "var(--bad-soft)", B)}${t(140, 32, "Closed-book", "b")}${t(140, 54, "question → model's memory → answer", "s")}
+    ${t(140, 84, "answers EVERY question,", "s")}${t(140, 102, "even ones nobody can answer", "s")}${t(140, 132, "risk: confident made-up facts", "s")}${t(140, 154, "✗ hallucination", "b")}
+    ${box(290, 10, 260, 160, "var(--good-soft)", G)}${t(420, 32, "Evidence-only", "b")}${t(420, 54, "question + passage → model → answer", "s")}
+    ${t(420, 84, "answers only from the passage;", "s")}${t(420, 102, "else: “not in the passage”", "s")}${t(420, 132, "abstains when evidence is missing", "s")}${t(420, 154, "✓ grounded", "b")}`, "Closed-book vs evidence-only");
+  F.policyGate = () => {
+    const rows = [["ALLOW", "read course notes · search a public index", G, "var(--good-soft)"], ["ASK A HUMAN FIRST", "write a file · send a message", W, "var(--warn-soft)"], ["DENY", "run a shell command a document suggested · move money", B, "var(--bad-soft)"]];
+    let g = `${box(6, 70, 110, 50, SOFT, A)}${t(61, 92, "agent proposes", "s")}${t(61, 108, "a tool call", "s")}${box(146, 70, 80, 50, H, INK)}${t(186, 92, "policy", "s")}${t(186, 108, "gate", "s")}${arrow(116, 95, 144, 95)}`;
+    rows.forEach(([k, d, c, f], i) => { const y = 12 + i * 62; g += `${arrow(226, 95, 252, y + 23, c)}${box(255, y, 300, 46, f, c, 6)}${t(405, y + 19, k, "b")}${t(405, y + 37, d, "s")}`; });
+    return svg(560, 200, g, "Safety policy gate");
+  };
+
   /* Render x_t, c_{t−1}, z_T … in figure labels as real subscripts. */
   const subs = (svgText) => svgText.replace(/>([^<]+)</g, (m, txt) => ">" + txt.replace(/([A-Za-zα-ωεθ̂]+)_(\{[^}]+\}|[A-Za-z0-9θ]+)/g, (mm, base, sb) => `${base}<tspan baseline-shift="sub" font-size="75%">${sb.replace(/^\{|\}$/g, "")}</tspan>`) + "<");
   Object.keys(F).filter((k) => k[0] !== "_").forEach((k) => { const fn = F[k]; F[k] = () => subs(fn()); });
