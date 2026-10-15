@@ -17,7 +17,7 @@ SCRIPTS = (
     ["lectures.js"]
     + [f"content/w{n:02d}.js" for n in range(0, 13)]
     + ["content/finals.js", "content/formulas.js", "content/glossary.js",
-       "figures.js", "widgets1.js", "widgets2.js", "widgets3.js", "math.js", "app.js"]
+       "figures.js", "widgets1.js", "widgets2.js", "widgets3.js", "math.js", "game.js", "app.js"]
 )
 TITLE = "GenAI 16-Hour Sprint"
 FONTS = ("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400"

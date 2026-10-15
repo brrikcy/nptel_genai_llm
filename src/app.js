@@ -40,6 +40,7 @@
     auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>',
+    path: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="5" r="2.5"/><circle cx="17" cy="12" r="2.5"/><circle cx="7" cy="19" r="2.5"/><path d="M9.3 6.2l5.4 4.6M14.7 13.2l-5.4 4.6"/></svg>',
     abc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18l4-12 4 12M4.5 14h5M14 6h4a3 3 0 0 1 0 6h-4zM14 12h4.5a3 3 0 0 1 0 6H14z"/></svg>',
     play2: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 4l13 8-13 8z"/></svg>'
   };
@@ -194,7 +195,7 @@
         <div class="scrim" id="scrim"></div>
         <main class="main" id="main" tabindex="-1"></main>
       </div>`;
-    $("#brand").onclick = () => go("home");
+    $("#brand").onclick = () => go(GAME ? "path" : "home");
     $("#menu-btn").onclick = () => document.body.classList.toggle("drawer");
     $("#scrim").onclick = () => document.body.classList.remove("drawer");
     $("#clock-btn").onclick = () => { T.running = !T.running; T.lastAct = Date.now(); tick(); toast(T.running ? "Study clock running" : "Study clock paused"); };
@@ -214,7 +215,8 @@
     const nMist = Object.values(S.mistakes).filter((m) => !m.fixed).length;
     rail.innerHTML = `
       <div class="rail-nav">
-        ${nl("home", "home", "Dashboard &amp; plan")}
+        ${GAME ? nl("path", "path", "Learning path") : ""}
+        ${nl("home", "home", GAME ? "Stats &amp; plan" : "Dashboard &amp; plan")}
         ${nl("exam", "exam", "Exam pattern &amp; strategy")}
         ${nl("formulas", "sheet", "Formula sheet")}
         ${nl("glossary", "abc", "Word bank")}
@@ -256,8 +258,8 @@
     if (name === "topic") { VIEW.topic = arg; VIEW.week = topicById[arg].week.id; }
     if (name === "quiz") { VIEW.topic = arg; VIEW.week = topicById[arg].week.id; }
     if (name === "week" || name === "test") VIEW.week = arg;
-    T.ctx = name === "topic" ? "topic:" + arg : name === "quiz" ? "quiz:" + arg : name === "test" ? "test:" + arg : name === "mock" ? "mock:" + arg : name;
-    if (name !== "home") S.last = { name, arg };
+    T.ctx = (GAME && GAME.ctx(name, arg)) || (name === "topic" ? "topic:" + arg : name === "quiz" ? "quiz:" + arg : name === "test" ? "test:" + arg : name === "mock" ? "mock:" + arg : name);
+    if (name !== "home" && name !== "path") S.last = { name, arg };
     save();
     render(opts);
   }
@@ -269,8 +271,9 @@
   function render(opts = {}) {
     const main = $("#main"); const y = scrollY;
     const v = VIEW;
-    const fn = { home: viewHome, week: viewWeek, topic: viewTopic, quiz: viewQuiz, test: viewTest, mocks: viewMocks, mock: viewMock, formulas: viewFormulas, glossary: viewGlossary, mistakes: viewMistakes, exam: viewExam, settings: viewSettings, drill: viewDrill }[v.name] || viewHome;
+    const fn = Object.assign({ home: viewHome, week: viewWeek, topic: viewTopic, quiz: viewQuiz, test: viewTest, mocks: viewMocks, mock: viewMock, formulas: viewFormulas, glossary: viewGlossary, mistakes: viewMistakes, exam: viewExam, settings: viewSettings, drill: viewDrill }, GAME ? GAME.views : {})[v.name] || viewHome;
     main.innerHTML = ""; hideTerm();
+    document.body.classList.toggle("gfocus", ["learn", "play", "review"].includes(v.name));
     fn(main, v.arg, opts);
     renderRail();
     if (opts.keepScroll) scrollTo(0, y); else { scrollTo(0, 0); main.focus({ preventScroll: true }); }
@@ -1002,8 +1005,11 @@
   }
 
   /* ---------- boot ---------- */
+  const GAME = window.GAME ? window.GAME({ S: () => S, save, go, toast, $, $$, esc, strip, shuffle, weeks, flat, topicById, QBANK, MOCKS, WIDGETS,
+    prep, correct, optsHTML, wireOpts, explainHTML, recordMistake, typeLabel, wireJumps, askHTML, wireAsk, figHTML, linkTerms }) : null;
+  if (GAME) VIEW = { name: "path" };
   shell();
   render();
   tick();
-  window.__GENAI = { S: () => S, go, QBANK, MOCKS, planItems, plannedTotal };
+  window.__GENAI = { S: () => S, go, QBANK, MOCKS, planItems, plannedTotal, GAME };
 })();

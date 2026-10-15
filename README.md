@@ -4,6 +4,10 @@ An interactive, self-paced study system for the NPTEL course **Fundamentals of G
 
 **To use it:** open `index.html` in any modern browser. Nothing to install. It works offline; fonts load from Google Fonts when online and fall back to system fonts otherwise.
 
+## How it works: a Duolingo-style learning path
+
+The app opens on a single path of 122 levels. For each of the 53 topics there is a **Lesson** (one idea per screen, a quick check on each) and a **Practice** (wrong answers come back until every question is right). Each unit ends in a **Checkpoint** (80% on the first try), and the path ends with **three full mock exams** (70% each). Levels unlock in order. Along the way you get XP and a daily goal, a streak with freezes, 5 hearts, gems and a shop, daily quests, combos, stars, celebrations, and a spaced-repetition **Practice hub** (1/2/4/8/16-day reviews that also refill hearts). Finishing the path means scoring 70%+ on three mocks of unseen questions, well above the exam's 30/75 minimum. Design notes and limits: [docs/gamification.md](docs/gamification.md).
+
 ## What's inside
 
 | | |
@@ -34,6 +38,7 @@ src/
   content/formulas.js  formula sheet
   widgets1–3.js        interactive models
   figures.js           diagrams (inline SVG)
+  game.js              the learning path: levels, XP, streak, hearts, gems, quests, spaced review
   math.js              KaTeX typesetting of $…$ and $$…$$ in any rendered text
   app.js               engine: plan, clock, routing, quizzes, exams
   styles.css
@@ -42,6 +47,7 @@ vendor/katex/         KaTeX 0.16.11 (script, styles and fonts are inlined by bui
 tools/validate.js      checks every question, card reference, every formula (KaTeX parse, no plain-text maths) and the 16-hour total
 tools/student-audit.js       readability grade, time-per-topic estimate and unexplained abbreviations
 tools/student-walkthrough.js a simulated learner works through the whole built app in a browser (needs Playwright)
+tools/path-walkthrough.js    a simulated learner plays every level of the learning path, start to finish
 ```
 
 Content strings that contain LaTeX use `R` (`String.raw`) template literals so backslashes survive, e.g. ``R`$\frac{a}{b}$` ``.
