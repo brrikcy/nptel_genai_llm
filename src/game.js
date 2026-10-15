@@ -276,7 +276,7 @@
           const first = !seen.has(p.id); seen.add(p.id);
           A.recordMistake(p.id, ok); srsAnswer(p.id, ok && first);
           if (ok) { if (first) firstRight++; mastered += mode === "practice" || first ? 1 : 0; combo++; maxCombo = Math.max(maxCombo, combo); const gq = G().q; gq.combo = Math.max(gq.combo, combo); questTick(); if (mode === "review" && G().hearts < MAX_HEARTS) G().hearts++; beep("ok"); }
-          else { combo = 0; if (first) firstWrong.add(p.id); if (mode !== "review") G().hearts = Math.max(0, G().hearts - 1); if (mode !== "practice") mastered++; beep("bad"); }
+          else { combo = 0; if (first) firstWrong.add(p.id); if (mode !== "review" && first) G().hearts = Math.max(0, G().hearts - 1); if (mode !== "practice") mastered++; beep("bad"); }
           A.save(); draw();
         };
         const n = $("#gcont"); if (n) n.onclick = () => {
