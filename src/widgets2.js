@@ -14,9 +14,9 @@
 
   /* 17. Forward diffusion */
   W.diffusion = (el) => {
-    const b = U.box(el, "Forward diffusion: destroy an image on schedule", "x_t = √ᾱ_t · x₀ + √(1 − ᾱ_t) · ε. Slide t from 0 to T = 1000 and compare the linear and cosine noise schedules.");
-    b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("s", [["linear", "Linear β schedule"], ["cosine", "Cosine schedule"]], "linear")}</div><div class="ctrls">${U.range("t", "Time step t", 0, 1000, 10, 250)}</div>
-      <div class="row" style="gap:18px;align-items:flex-start"><div><div class="eyebrow">x_t</div><canvas width="128" height="128" class="wcanvas cv" style="width:168px;margin-top:6px;image-rendering:pixelated"></canvas></div><div style="flex:1;min-width:240px"><div class="eyebrow">ᾱ_t (signal kept) over time</div><div class="plot"></div></div></div><div class="readout"></div>`);
+    const b = U.box(el, "Forward diffusion: ruin an image on schedule", R`$x_t = \sqrt{\bar{\alpha}_t}\,x_0 + \sqrt{1 - \bar{\alpha}_t}\,\varepsilon$. Slide $t$ from 0 to $T = 1000$ and compare the linear and cosine noise schedules.`);
+    b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("s", [["linear", "Linear β schedule"], ["cosine", "Cosine schedule"]], "linear")}</div><div class="ctrls">${U.range("t", R`Time step $t$`, 0, 1000, 10, 250)}</div>
+      <div class="row" style="gap:18px;align-items:flex-start"><div><div class="eyebrow">noisy image</div><canvas width="128" height="128" class="wcanvas cv" style="width:168px;margin-top:6px;image-rendering:pixelated"></canvas></div><div style="flex:1;min-width:240px"><div class="eyebrow">alpha-bar (signal kept) over time</div><div class="plot"></div></div></div><div class="readout"></div>`);
     const N = 32; const x0 = []; const r = U.rng(11); const eps = [];
     for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { let v = -0.85; if (i > 18) v = 0.2; if (Math.hypot(i - 9, j - 22) < 5) v = 0.95; if (i > 12 && i <= 18 && Math.abs(j - 10) < 7 - (18 - i) * 0 && j > 3 && j < 17) v = 0.6; if (i > 6 && i <= 12 && Math.abs(j - 10) < i - 5) v = 0.85; x0.push(v); eps.push(U.gauss(r)); }
     const S = { linear: schedule("linear", 1000), cosine: schedule("cosine", 1000) };
@@ -28,41 +28,41 @@
       const p = U.plot({ x0: 0, x1: 1000, y0: 0, y1: 1, h: 170 });
       let dL = "", dC = ""; for (let k = 0; k <= 1000; k += 10) { const a1 = k ? S.linear.abar[k - 1] : 1, a2 = k ? S.cosine.abar[k - 1] : 1; dL += (dL ? "L" : "M") + p.X(k) + "," + p.Y(a1); dC += (dC ? "L" : "M") + p.X(k) + "," + p.Y(a2); }
       b.querySelector(".plot").innerHTML = p.svg(p.frame([0, 250, 500, 750, 1000], [0, 0.5, 1]) + p.line(dL, C1, s.s === "linear" ? "" : 'opacity="0.35"') + p.line(dC, C2, s.s === "cosine" ? "" : 'opacity="0.35"') + `<line x1="${p.X(t)}" x2="${p.X(t)}" y1="${p.padT}" y2="${p.Y(0)}" stroke="var(--ink)" stroke-dasharray="3 3"/>`) + `<div class="legend"><span><i style="background:${C1}"></i>linear</span><span><i style="background:${C2}"></i>cosine</span></div>`;
-      b.querySelector(".readout").innerHTML = `t = ${t} · β_t = <b>${U.f(bt, 5)}</b> · ᾱ_t = Π(1 − β_s) = <b>${U.f(ab, 4)}</b><br>signal weight √ᾱ_t = ${U.f(Math.sqrt(ab), 3)} · noise weight √(1−ᾱ_t) = ${U.f(Math.sqrt(1 - ab), 3)} · SNR = ᾱ/(1−ᾱ) = ${ab >= 1 ? "∞" : U.f(ab / (1 - ab), 3)}<br><span class="muted">The forward process has no learned parameters. Thanks to the closed form you can jump straight to any t without simulating the steps in between. The cosine schedule destroys information more evenly, so fewer late steps are wasted on pure noise.</span>`;
+      b.querySelector(".readout").innerHTML = R`$t = ${t}$ · $\beta_t = ${U.f(bt, 5)}$ · $\bar{\alpha}_t = \prod_s (1 - \beta_s) = ${U.f(ab, 4)}$<br>signal weight $\sqrt{\bar{\alpha}_t} = ${U.f(Math.sqrt(ab), 3)}$ · noise weight $\sqrt{1-\bar{\alpha}_t} = ${U.f(Math.sqrt(1 - ab), 3)}$ · $\text{SNR} = \frac{\bar{\alpha}_t}{1-\bar{\alpha}_t} = ${ab >= 1 ? "\\infty" : U.f(ab / (1 - ab), 3)}$<br><span class="muted">The forward process has no learned parts. Thanks to the shortcut formula you can jump straight to any $t$. The cosine schedule ruins information more evenly, so fewer late steps are wasted on pure noise.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 18. Guidance scale */
   W.cfg = (el) => {
-    const b = U.box(el, "Classifier-free guidance as vector arithmetic", "The same U-Net predicts noise twice: with the prompt (conditional) and with an empty prompt (unconditional). Guidance extrapolates along their difference.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("w", "Guidance scale w", 0, 12, 0.5, 7.5)}</div><div class="plot"></div><div class="readout"></div>`);
+    const b = U.box(el, "Classifier-free guidance as arrows", "The same U-Net guesses the noise twice: with the prompt and with an empty prompt. Guidance keeps going along the difference between the two arrows.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("w", R`Guidance scale $w$`, 0, 12, 0.5, 7.5)}</div><div class="plot"></div><div class="readout"></div>`);
     const draw = (s) => {
       const p = U.plot({ x0: -1, x1: 9, y0: -1, y1: 5, h: 230 });
       const u = [1.5, 0.8], c = [2.4, 1.6]; const g = [u[0] + s.w * (c[0] - u[0]), u[1] + s.w * (c[1] - u[1])];
       const clamp = (v, a, bb) => Math.max(a, Math.min(bb, v));
       const arrow = (a, col, label) => `<line x1="${p.X(0)}" y1="${p.Y(0)}" x2="${p.X(clamp(a[0], -1, 9))}" y2="${p.Y(clamp(a[1], -1, 5))}" stroke="${col}" stroke-width="3" marker-end="url(#ah)"/><text x="${p.X(clamp(a[0], -1, 8.6)) + 6}" y="${p.Y(clamp(a[1], -1, 4.8)) - 6}" style="fill:${col};font-weight:700">${label}</text>`;
-      const svg = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>` + p.frame([0, 2, 4, 6, 8], [0, 2, 4]) + arrow(u, C2, "ε(x_t, ∅)") + arrow(c, C3, "ε(x_t, y)") + arrow(g, C1, "ε̃");
+      const svg = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>` + p.frame([0, 2, 4, 6, 8], [0, 2, 4]) + arrow(u, C2, "without prompt") + arrow(c, C3, "with prompt") + arrow(g, C1, "guided");
       b.querySelector(".plot").innerHTML = p.svg(svg);
-      const msg = s.w === 0 ? "w = 0: purely unconditional, the prompt is ignored." : s.w === 1 ? "w = 1: plain conditional prediction, no extra push." : s.w < 1 ? "0 < w < 1: interpolates between the unconditional and conditional predictions." : s.w <= 9 ? "w > 1: extrapolates past the conditional prediction. Samples follow the prompt more closely; diversity drops. Stable Diffusion's default is about 7.5." : "Very large w: oversaturated, distorted images with little diversity.";
-      b.querySelector(".readout").innerHTML = `ε̃ = ε(x_t, ∅) + w · (ε(x_t, y) − ε(x_t, ∅)) = [${U.f(g[0], 2)}, ${U.f(g[1], 2)}]<br>${msg}<br>The course writes the same thing as ε̂ = (1 + s)·ε_cond − s·ε_uncond, so w = 1 + s; here s = ${U.f(s.w - 1, 2)}.<br><span class="muted">Classifier guidance needs a separately trained noisy-image classifier and adds s·∇log p(y|x_t). Classifier-free guidance needs none: you randomly drop the prompt (about 10–20% of the time) during training so one network learns both predictions.</span>`;
+      const msg = s.w === 0 ? R`$w = 0$: purely unconditional, the prompt is ignored.` : s.w === 1 ? R`$w = 1$: the plain conditional guess, no extra push.` : s.w < 1 ? R`$0 \lt w \lt 1$: in between the two guesses.` : s.w <= 9 ? R`$w > 1$: pushes past the conditional guess. Pictures follow the prompt more closely; variety drops. Stable Diffusion's default is about $7.5$.` : R`Very large $w$: over-saturated, distorted pictures with little variety.`;
+      b.querySelector(".readout").innerHTML = R`$\tilde{\varepsilon} = \varepsilon(x_t, \varnothing) + w\,\big(\varepsilon(x_t, y) - \varepsilon(x_t, \varnothing)\big) = [${U.f(g[0], 2)}, ${U.f(g[1], 2)}]$<br>${msg}<br>The course writes the same thing as $\hat{\varepsilon} = (1 + s)\,\varepsilon_{\text{cond}} - s\,\varepsilon_{\text{uncond}}$, so $w = 1 + s$; here $s = ${U.f(s.w - 1, 2)}$.<br><span class="muted">Classifier guidance needs a separately trained noisy-image classifier. Classifier-free guidance needs none: the prompt is randomly dropped (about 10–20% of the time) during training so one network learns both guesses.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 19. U-Net explorer */
   W.unet = (el) => {
-    const b = U.box(el, "Tour the denoising U-Net", "Click a block to see what it does in a diffusion model.");
+    const b = U.box(el, "Tour the U-Net", "Click a block to see what it does. Pix2Pix uses this shape as its generator; diffusion models (Week 7) use it to predict noise.");
     const blocks = {
-      in: ["Input x_t", "The noisy image at step t, same height × width as the output."],
-      t: ["Time embedding", "t is turned into a sinusoidal embedding, passed through an MLP and added inside every residual block, so one network knows how much noise to expect."],
-      e1: ["Encoder block 1", "Residual conv blocks with GroupNorm; then downsample. Captures edges and fine texture."],
-      e2: ["Encoder block 2", "Fewer pixels, more channels. Captures larger structures."],
-      bn: ["Bottleneck", "Lowest resolution, widest channels. Self-attention here lets distant regions coordinate. In Stable Diffusion, cross-attention to the text embedding enters at these attention layers."],
-      d2: ["Decoder block 2", "Upsample and concatenate the matching encoder features (skip connection)."],
-      d1: ["Decoder block 1", "Upsample back to full resolution, again with a skip connection, so fine detail lost in the bottleneck is restored."],
-      out: ["Output ε̂_θ(x_t, t)", "Predicted noise, same shape as x_t. The training loss is ‖ε − ε̂_θ(x_t, t)‖²."],
-      skip: ["Skip connections", "Copy encoder feature maps straight across to the decoder. This is the defining feature of the U-Net (first proposed for biomedical segmentation; Pix2Pix uses it as its generator too)."]
+      in: ["Input image", R`The noisy image $x_t$ at step $t$, the same height and width as the output.`],
+      t: ["Time embedding", R`The step number $t$ is turned into a list of sine and cosine values, passed through a small network and added inside every block, so one network knows how much noise to expect.`],
+      e1: ["Encoder block 1", "Convolution blocks (with GroupNorm), then shrink the image. Picks up edges and fine texture."],
+      e2: ["Encoder block 2", "Fewer pixels, more channels. Picks up larger shapes."],
+      bn: ["Bottleneck", "Smallest image, most channels. Self-attention here lets distant regions coordinate. In Stable Diffusion, cross-attention to the text prompt enters at these attention layers."],
+      d2: ["Decoder block 2", "Grow the image and join on the matching encoder features (skip connection)."],
+      d1: ["Decoder block 1", "Grow back to full size, again with a skip connection, so fine detail lost in the bottleneck comes back."],
+      out: ["Output noise", R`The predicted noise $\hat{\varepsilon}_\theta(x_t, t)$, the same shape as $x_t$. The training loss is $\|\varepsilon - \hat{\varepsilon}_\theta(x_t, t)\|^2$.`],
+      skip: ["Skip connections", "Copy encoder feature maps straight across to the decoder. This is the defining feature of the U-Net (first designed for medical image segmentation; Pix2Pix uses it as its generator too)."]
     };
     b.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 560 230" class="chart" style="max-width:560px">
       <defs><marker id="ua" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
@@ -76,10 +76,10 @@
 
   /* 20. Word embeddings */
   W.w2v = (el) => {
-    const b = U.box(el, "Word vectors and analogies", "Toy 2-D embeddings arranged the way Word2Vec/GloVe arrange real ones: directions carry meaning. Compute A − B + C and find the nearest word.");
+    const b = U.box(el, "Word vectors and analogies", R`Toy 2-D embeddings arranged the way Word2Vec and GloVe arrange real ones: directions carry meaning. Compute $A - B + C$ and find the nearest word.`);
     const E = { king: [4.2, 3.6], queen: [4.0, 1.2], man: [1.6, 3.4], woman: [1.4, 1.0], prince: [3.2, 3.9], princess: [3.0, 1.5], boy: [0.8, 3.7], girl: [0.6, 1.3], paris: [-3.2, 2.8], france: [-1.6, 3.6], delhi: [-3.4, 0.2], india: [-1.8, 1.0], apple: [-0.6, -2.6], mango: [-1.4, -2.9] };
     const ws = Object.keys(E); const opt = (v) => ws.map((w) => `<option ${w === v ? "selected" : ""}>${w}</option>`).join("");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls"><div class="ctrl"><label>A</label><select data-k="a">${opt("king")}</select></div><div class="ctrl"><label>− B</label><select data-k="b">${opt("man")}</select></div><div class="ctrl"><label>+ C</label><select data-k="c">${opt("woman")}</select></div></div><div class="plot"></div><div class="readout"></div>`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls"><div class="ctrl"><label>A</label><select data-k="a">${opt("king")}</select></div><div class="ctrl"><label>minus B</label><select data-k="b">${opt("man")}</select></div><div class="ctrl"><label>plus C</label><select data-k="c">${opt("woman")}</select></div></div><div class="plot"></div><div class="readout"></div>`);
     const cos = (u, v) => (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v));
     const draw = (s) => {
       const t = [E[s.a][0] - E[s.b][0] + E[s.c][0], E[s.a][1] - E[s.b][1] + E[s.c][1]];
@@ -89,28 +89,29 @@
       ws.forEach((w) => { const [x, y] = E[w]; const on = [s.a, s.b, s.c].includes(w) || w === ranked[0][0]; g += `<circle cx="${p.X(x)}" cy="${p.Y(y)}" r="${on ? 6 : 4}" fill="${w === ranked[0][0] ? C3 : on ? C1 : "var(--ink-2)"}"/><text x="${p.X(x) + 8}" y="${p.Y(y) + 4}" style="fill:var(--ink)">${w}</text>`; });
       g += `<circle cx="${p.X(t[0])}" cy="${p.Y(t[1])}" r="8" fill="none" stroke="${C2}" stroke-width="3"/>`;
       b.querySelector(".plot").innerHTML = p.svg(g);
-      b.querySelector(".readout").innerHTML = `${s.a} − ${s.b} + ${s.c} = [${U.f(t[0], 2)}, ${U.f(t[1], 2)}] (amber ring)<br>Nearest by cosine similarity: <b>${ranked[0][0]}</b> (${U.f(ranked[0][1], 3)}), then ${ranked[1][0]} (${U.f(ranked[1][1], 3)})<br><span class="muted">Word2Vec learns these from local context windows (CBOW predicts the word from its context; skip-gram predicts the context from the word). GloVe learns them from global co-occurrence counts. Both give one static vector per word, so "bank" (river) and "bank" (money) share a vector. Contextual models like BERT fix that.</span>`;
+      b.querySelector(".readout").innerHTML = R`$\text{${s.a}} - \text{${s.b}} + \text{${s.c}} = [${U.f(t[0], 2)}, ${U.f(t[1], 2)}]$ (gold ring)<br>Nearest by cosine similarity: <b>${ranked[0][0]}</b> (${U.f(ranked[0][1], 3)}), then ${ranked[1][0]} (${U.f(ranked[1][1], 3)})<br><span class="muted">Word2Vec learns these from local context windows (CBOW predicts the word from its context; skip-gram predicts the context from the word). GloVe learns them from global co-occurrence counts. Both give one static vector per word, so "bank" (river) and "bank" (money) share a vector. Contextual models like BERT fix that.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 21. LSTM cell */
   W.lstm = (el) => {
-    const b = U.box(el, "Inside an LSTM cell", "Set the gate values (outputs of sigmoids, so 0–1) and see how the cell state and hidden state update. Then compare gradient flow through an RNN and an LSTM.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("c0", "Previous cell state c_{t−1}", -2, 2, 0.1, 1.5)}${U.range("f", "Forget gate f_t", 0, 1, 0.05, 0.9)}${U.range("i", "Input gate i_t", 0, 1, 0.05, 0.3)}${U.range("g", "Candidate g_t = tanh(·)", -1, 1, 0.05, 0.8)}${U.range("o", "Output gate o_t", 0, 1, 0.05, 0.7)}${U.range("n", "Sequence length (gradient demo)", 5, 100, 5, 40)}</div><div class="readout"></div>`);
+    const b = U.box(el, "Inside an LSTM cell", "Set the gate values (they come from sigmoids, so each is between 0 and 1) and see how the cell state and hidden state update. Then compare how a gradient survives many steps in an RNN and in an LSTM.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("c0", R`Previous cell state $c_{t-1}$`, -2, 2, 0.1, 1.5)}${U.range("f", R`Forget gate $f_t$`, 0, 1, 0.05, 0.9)}${U.range("i", R`Input gate $i_t$`, 0, 1, 0.05, 0.3)}${U.range("g", R`Candidate $g_t$`, -1, 1, 0.05, 0.8)}${U.range("o", R`Output gate $o_t$`, 0, 1, 0.05, 0.7)}${U.range("n", "Sequence length (gradient demo)", 5, 100, 5, 40)}</div><div class="readout"></div>`);
     const draw = (s) => {
       const c = s.f * s.c0 + s.i * s.g, h = s.o * Math.tanh(c);
-      b.querySelector(".readout").innerHTML = `c_t = f_t ⊙ c_{t−1} + i_t ⊙ g_t = ${s.f}×${s.c0} + ${s.i}×${s.g} = <b>${U.f(c, 4)}</b><br>h_t = o_t ⊙ tanh(c_t) = ${s.o}×tanh(${U.f(c, 3)}) = <b>${U.f(h, 4)}</b><br>
-        ${s.f > 0.95 && s.i < 0.1 ? "Memory preserved: forget ≈ 1, input ≈ 0, so the cell carries information forward almost unchanged." : s.f < 0.2 ? "Memory wiped: the forget gate erased c_{t−1}." : ""}<br>
-        Gradient through ${s.n} steps · vanilla RNN with factor 0.9 per step: 0.9^${s.n} = <b>${(0.9 ** s.n).toExponential(2)}</b> (vanishes); with 1.1: <b>${(1.1 ** s.n).toExponential(2)}</b> (explodes)<br>
-        LSTM cell path with f_t = ${s.f}: ${s.f}^${s.n} = <b>${(s.f ** s.n).toExponential(2)}</b>. The gate learns to sit near 1 when long memory matters.<br><span class="muted">That additive cell-state path, controlled by gates, is the LSTM's fix for vanishing gradients. Gradient clipping handles explosions.</span>`;
+      const sci = (v) => { const e = Math.floor(Math.log10(Math.abs(v))); return Math.abs(e) < 3 ? U.f(v, 4) : String.raw`${U.f(v / 10 ** e, 2)} \times 10^{${e}}`; };
+      b.querySelector(".readout").innerHTML = R`$c_t = f_t \odot c_{t-1} + i_t \odot g_t = (${s.f})(${s.c0}) + (${s.i})(${s.g}) = ${U.f(c, 4)}$<br>$h_t = o_t \odot \tanh(c_t) = (${s.o})\tanh(${U.f(c, 3)}) = ${U.f(h, 4)}$<br>
+        ${s.f > 0.95 && s.i < 0.1 ? R`Memory kept: forget $\approx 1$, input $\approx 0$, so the cell carries information forward almost unchanged.` : s.f < 0.2 ? R`Memory wiped: the forget gate erased $c_{t-1}$.` : ""}<br>
+        Gradient through ${s.n} steps · plain RNN shrinking by 0.9 per step: $0.9^{${s.n}} = ${sci(0.9 ** s.n)}$ (vanishes); growing by 1.1: $1.1^{${s.n}} = ${sci(1.1 ** s.n)}$ (explodes)<br>
+        LSTM cell path with $f_t = ${s.f}$: $${s.f}^{${s.n}} = ${sci(s.f ** s.n)}$. The gate learns to stay near 1 when long memory matters.<br><span class="muted">That added-on cell-state path, controlled by gates, is the LSTM's fix for vanishing gradients. Gradient clipping handles explosions.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 22. Self-attention */
   W.attention = (el) => {
-    const b = U.box(el, "Self-attention, computed", "Click a word to see where it looks. Scores are q·k/√d, turned into weights with softmax. Toggle the causal mask a decoder uses.");
+    const b = U.box(el, "Self-attention, computed", R`Click a word to see where it looks. Scores are $\frac{q \cdot k}{\sqrt{d}}$, turned into weights with softmax. Toggle the causal mask a decoder uses.`);
     const words = ["The", "animal", "didn't", "cross", "the", "street", "because", "it", "was", "tired"];
     const v = [[0.1, 0.0, 0.2], [0.9, 0.2, 0.1], [0.1, 0.8, 0.0], [0.2, 0.9, 0.3], [0.1, 0.0, 0.25], [0.3, 0.2, 0.9], [0.0, 0.5, 0.1], [0.85, 0.25, 0.3], [0.2, 0.6, 0.1], [0.8, 0.5, 0.1]];
     b.insertAdjacentHTML("beforeend", `<div class="row">${U.seg("m", [["enc", "Encoder (bidirectional)"], ["dec", "Decoder (causal mask)"]], "enc")}</div><div class="tokens">${words.map((w, i) => `<span class="tok ${i === 7 ? "on" : ""}" data-i="${i}" tabindex="0" role="button">${w}</span>`).join("")}</div><div class="plot"></div><div class="readout"></div>`);
@@ -122,7 +123,7 @@
       const W_ = 560, H = 150, bw = W_ / words.length;
       let g = ""; words.forEach((t, j) => { const hgt = w[j] * 110; g += `<rect x="${j * bw + 6}" y="${118 - hgt}" width="${bw - 12}" height="${hgt}" rx="4" fill="${j === sel ? C2 : C1}" opacity="${st.m === "dec" && j > sel ? 0.15 : 1}"/><text x="${j * bw + bw / 2}" y="${136}" text-anchor="middle" style="fill:var(--ink)">${t}</text><text x="${j * bw + bw / 2}" y="${112 - hgt}" text-anchor="middle">${w[j] < 0.005 ? "" : w[j].toFixed(2)}</text>`; });
       b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 ${W_} ${H}">${g}</svg>`;
-      b.querySelector(".readout").innerHTML = `Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V · here d_k = ${d}<br>Query "<b>${words[sel]}</b>" puts its largest weight on "<b>${words[w.indexOf(Math.max(...w))]}</b>" (${Math.max(...w).toFixed(2)}). The weights in the row sum to 1.<br><span class="muted">${st.m === "dec" ? "Causal mask: scores for future positions are set to −∞ before the softmax, so a token can only attend to itself and earlier tokens. That is what makes GPT-style generation autoregressive." : "Encoder self-attention is bidirectional: every token sees every other token. BERT uses this. Multi-head attention runs several of these in parallel with different learned projections and concatenates the results."}</span>`;
+      b.querySelector(".readout").innerHTML = R`$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V$ · here $d_k = ${d}$<br>Query "<b>${words[sel]}</b>" puts its largest weight on "<b>${words[w.indexOf(Math.max(...w))]}</b>" (${Math.max(...w).toFixed(2)}). The weights in the row sum to 1.<br><span class="muted">${st.m === "dec" ? R`Causal mask: scores for future positions are set to $-\infty$ before the softmax, so a token can only look at itself and earlier tokens. That is what makes GPT-style generation one-word-at-a-time.` : "Encoder self-attention is bidirectional: every token sees every other token. BERT uses this. Multi-head attention runs several of these in parallel with different learned projections and concatenates the results."}</span>`;
     };
     st = U.bind(b, draw);
     b.querySelectorAll(".tok").forEach((t) => { const pick = () => { sel = +t.dataset.i; b.querySelectorAll(".tok").forEach((x) => x.classList.toggle("on", x === t)); draw(); }; t.onclick = pick; t.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } }; });
@@ -131,14 +132,14 @@
 
   /* 23. Positional encoding */
   W.posenc = (el) => {
-    const b = U.box(el, "Sinusoidal positional encoding", "PE(pos, 2i) = sin(pos / 10000^(2i/d)), PE(pos, 2i+1) = cos(pos / 10000^(2i/d)). Each row is one position; low dimensions oscillate fast, high dimensions slowly.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", "d_model", 16, 128, 16, 64)}${U.range("pos", "Highlight position", 0, 49, 1, 10)}</div><canvas width="640" height="250" class="wcanvas cv" style="aspect-ratio:640/250"></canvas><div class="readout"></div>`);
+    const b = U.box(el, "Sinusoidal positional encoding", R`$\text{PE}(pos, 2i) = \sin\!\left(\frac{pos}{10000^{2i/d}}\right)$, $\text{PE}(pos, 2i+1) = \cos\!\left(\frac{pos}{10000^{2i/d}}\right)$. Each row is one position; left columns wave fast, right columns slowly.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", R`$d_{\text{model}}$`, 16, 128, 16, 64)}${U.range("pos", "Highlight position", 0, 49, 1, 10)}</div><canvas width="640" height="250" class="wcanvas cv" style="aspect-ratio:640/250"></canvas><div class="readout"></div>`);
     const draw = (s) => {
       const cv = b.querySelector(".cv"), ctx = cv.getContext("2d"); const P = 50, D = s.d; const cw = 640 / D, ch = 250 / P;
       for (let pos = 0; pos < P; pos++) for (let k = 0; k < D; k++) { const i = Math.floor(k / 2); const ang = pos / Math.pow(10000, (2 * i) / D); const v = k % 2 ? Math.cos(ang) : Math.sin(ang); const r = v > 0 ? Math.round(35 + 50 * v) : 35, gg = 70 + Math.round(30 * (1 - Math.abs(v))), bb = v < 0 ? Math.round(120 - 80 * v) : 90; ctx.fillStyle = `rgb(${v > 0 ? 40 + 200 * v : 40},${gg},${v < 0 ? 60 - 190 * v : 60 + 20 * (1 - v)})`; ctx.fillRect(k * cw, pos * ch, cw + 0.5, ch + 0.5); }
       ctx.strokeStyle = U.css("--hi"); ctx.lineWidth = 3; ctx.strokeRect(1, s.pos * ch, 638, ch);
       const vec = []; for (let k = 0; k < 6; k++) { const i = Math.floor(k / 2); const ang = s.pos / Math.pow(10000, (2 * i) / D); vec.push((k % 2 ? Math.cos(ang) : Math.sin(ang)).toFixed(3)); }
-      b.querySelector(".readout").innerHTML = `Rows = positions 0–49, columns = ${D} dimensions (red = +1, blue = −1).<br>PE(${s.pos}) starts [${vec.join(", ")}, …]<br><span class="muted">Self-attention alone is order-blind (permuting the input permutes the output). Adding PE to the token embeddings injects order. Every position gets a unique pattern, values stay within [−1, 1], and PE(pos + k) is a linear function of PE(pos), which makes relative offsets easy to learn.</span>`;
+      b.querySelector(".readout").innerHTML = R`Rows = positions 0–49, columns = ${D} dimensions (red $= +1$, blue $= -1$).<br>$\text{PE}(${s.pos})$ starts $[${vec.join(", ")}, \ldots]$<br><span class="muted">Self-attention alone is order-blind (shuffle the input and the output just shuffles). Adding PE to the word embeddings puts order back in. Every position gets a unique pattern, values stay between $-1$ and $1$, and $\text{PE}(pos + k)$ is a simple (linear) function of $\text{PE}(pos)$, which makes relative distances easy to learn.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
@@ -164,7 +165,7 @@
   W.sampler = (el) => {
     const b = U.box(el, "Next-token sampler", "Prompt: “Name an animal that is both domestic and wild:”. The model's logits are fixed. Temperature reshapes the distribution; top-k and top-p cut its tail.");
     const toks = ["cat", "dog", "pig", "horse", "goat", "car", "quantum"]; const logits = [5, 4, 3.2, 2.5, 2.2, 1, -1];
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("T", "Temperature T", 0.05, 3, 0.05, 1)}${U.range("k", "Top-k (7 = off)", 1, 7, 1, 7)}${U.range("p", "Top-p (1 = off)", 0.1, 1, 0.05, 1)}</div><div class="row"><button class="btn small" data-act="s1">Sample 1 token</button><button class="btn quiet small" data-act="s100">Sample 100</button></div><div class="plot"></div><div class="readout"></div>`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("T", R`Temperature $T$`, 0.05, 3, 0.05, 1)}${U.range("k", "Top-k (7 = off)", 1, 7, 1, 7)}${U.range("p", "Top-p (1 = off)", 0.1, 1, 0.05, 1)}</div><div class="row"><button class="btn small" data-act="s1">Sample 1 token</button><button class="btn quiet small" data-act="s100">Sample 100</button></div><div class="plot"></div><div class="readout"></div>`);
     let counts = null, last = null; const r = U.rng(5); let st;
     const probs = (s) => {
       const z = logits.map((l) => l / s.T); const m = Math.max(...z); let p = z.map((v) => Math.exp(v - m)); const Z = p.reduce((a, c) => a + c, 0); p = p.map((v) => v / Z);
@@ -178,8 +179,8 @@
       const s = st; const { raw, q, keep } = probs(s);
       const W_ = 560, H = 190, bw = W_ / toks.length; let g = "";
       toks.forEach((t, i) => { const h1 = raw[i] * 140, h2 = q[i] * 140; g += `<rect x="${i * bw + 10}" y="${160 - h1}" width="${bw - 20}" height="${h1}" rx="4" fill="var(--rule)"/><rect x="${i * bw + 18}" y="${160 - h2}" width="${bw - 36}" height="${h2}" rx="4" fill="${keep.has(i) ? (last === i ? C2 : C1) : "transparent"}"/><text x="${i * bw + bw / 2}" y="178" text-anchor="middle" style="fill:var(--ink)">${t}</text><text x="${i * bw + bw / 2}" y="${154 - Math.max(h1, h2)}" text-anchor="middle">${(q[i] * 100).toFixed(1)}%</text>${counts ? `<text x="${i * bw + bw / 2}" y="${H - 1}" text-anchor="middle">${counts[i]}×</text>` : ""}`; });
-      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 ${W_} ${H + 6}">${g}</svg><div class="legend"><span><i style="background:var(--rule);height:10px"></i>softmax(z/T)</span><span><i style="background:${C1};height:10px"></i>after top-k / top-p, renormalised</span></div>`;
-      b.querySelector(".readout").innerHTML = `p_i = exp(z_i / T) / Σ_j exp(z_j / T) · logits = [${logits.join(", ")}]<br>${s.T < 0.3 ? "Low T: nearly greedy (argmax). Deterministic and repetitive, good for facts, maths, code." : s.T > 1.5 ? "High T: flat distribution. Creative but prone to nonsense like “car” or “quantum” (hallucination)." : "T ≈ 1: the model's own distribution."} Kept tokens: ${keep.size} of 7.${last != null ? `<br>Sampled: <b>${toks[last]}</b>` : ""}<br><span class="muted">Top-k keeps the k most likely tokens. Top-p (nucleus) keeps the smallest set whose cumulative probability reaches p, so its size adapts to how confident the model is. Greedy decoding always takes the argmax and gives the same output every time.</span>`;
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 ${W_} ${H + 6}">${g}</svg><div class="legend"><span><i style="background:var(--rule);height:10px"></i>softmax with temperature</span><span><i style="background:${C1};height:10px"></i>after top-k / top-p, renormalised</span></div>`;
+      b.querySelector(".readout").innerHTML = R`$p_i = \frac{e^{z_i / T}}{\sum_j e^{z_j / T}}$ · logits $= [${logits.join(", ")}]$<br>${s.T < 0.3 ? "Low temperature: nearly greedy (always the top token). Repeatable, good for facts, maths and code." : s.T > 1.5 ? "High temperature: a flat distribution. Creative but prone to nonsense like “car” or “quantum” (hallucination)." : R`$T \approx 1$: the model's own distribution.`} Kept tokens: ${keep.size} of 7.${last != null ? `<br>Sampled: <b>${toks[last]}</b>` : ""}<br><span class="muted">Top-k keeps the k most likely tokens. Top-p (nucleus) keeps the smallest set whose cumulative probability reaches p, so its size adapts to how confident the model is. Greedy decoding always takes the argmax and gives the same output every time.</span>`;
     };
     const sample = () => { const { q } = probs(st); let u = r(), i = 0; for (; i < q.length - 1; i++) { u -= q[i]; if (u <= 0) break; } return i; };
     st = U.bind(b, () => { counts = null; last = null; draw(); });
@@ -216,18 +217,18 @@
 
   /* 27. LoRA */
   W.lora = (el) => {
-    const b = U.box(el, "LoRA parameter calculator", "Freeze W (d × k). Learn ΔW = B·A with B (d × r) and A (r × k). Count the trainable parameters.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", "d (rows of W)", 256, 8192, 256, 4096)}${U.range("k", "k (columns of W)", 256, 8192, 256, 4096)}${U.range("r", "rank r", 1, 64, 1, 8)}${U.range("L", "Adapted matrices (layers × Q,V)", 1, 128, 1, 64)}</div><div class="readout"></div>`);
+    const b = U.box(el, "LoRA parameter calculator", R`Freeze $W$ ($d \times k$). Learn $\Delta W = BA$ with $B$ ($d \times r$) and $A$ ($r \times k$). Count the trainable parameters.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("d", R`$d$ (rows of $W$)`, 256, 8192, 256, 4096)}${U.range("k", R`$k$ (columns of $W$)`, 256, 8192, 256, 4096)}${U.range("r", R`rank $r$`, 1, 64, 1, 8)}${U.range("L", "Adapted matrices (layers, Q and V)", 1, 128, 1, 64)}</div><div class="readout"></div>`);
     const draw = (s) => {
       const full = s.d * s.k, lo = s.r * (s.d + s.k);
-      b.querySelector(".readout").innerHTML = `Full fine-tune of one matrix: d·k = ${s.d}×${s.k} = <b>${full.toLocaleString()}</b><br>LoRA: r(d + k) = ${s.r}×(${s.d}+${s.k}) = <b>${lo.toLocaleString()}</b> → <b>${U.f((lo / full) * 100, 3)}%</b> of the original (${U.f(full / lo, 1)}× fewer)<br>Across ${s.L} adapted matrices: ${(full * s.L / 1e6).toFixed(1)} M vs <b>${(lo * s.L / 1e6).toFixed(2)} M</b> trainable parameters<br><span class="muted">h = W₀x + (α/r)·B·A·x. A starts random and B starts at zero, so ΔW = 0 at step 0 and training begins exactly at the pre-trained model. After training, BA can be merged into W₀, so inference has no extra latency. QLoRA adds a 4-bit quantised frozen base model so large models fit on one GPU.</span>`;
+      b.querySelector(".readout").innerHTML = R`Full fine-tune of one matrix: $d \cdot k = ${s.d} \times ${s.k} = ${full.toLocaleString("en-US").replace(/,/g, "{,}")}$<br>LoRA: $r(d + k) = ${s.r} \times (${s.d} + ${s.k}) = ${lo.toLocaleString("en-US").replace(/,/g, "{,}")}$ → <b>${U.f((lo / full) * 100, 3)}%</b> of the original (${U.f(full / lo, 1)} times fewer)<br>Across ${s.L} adapted matrices: ${(full * s.L / 1e6).toFixed(1)} M vs <b>${(lo * s.L / 1e6).toFixed(2)} M</b> trainable parameters<br><span class="muted">$h = W_0 x + \frac{\alpha}{r} BAx$. $A$ starts random and $B$ starts at zero, so $\Delta W = 0$ at the start and training begins exactly at the pre-trained model. Afterwards $BA$ can be merged into $W_0$, so there is no extra delay when answering. QLoRA stores the frozen base model in 4 bits so big models fit on one GPU.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };
 
   /* 28. RAG pipeline */
   W.rag = (el) => {
-    const b = U.box(el, "A working mini-RAG", "Eight passages form the knowledge base. Type a question: it is embedded (bag-of-words TF-IDF here), the top-k passages are retrieved by cosine similarity, and the augmented prompt is built.");
+    const b = U.box(el, "A working mini-RAG", "Eight passages form the knowledge base. Type a question: it is turned into numbers (TF-IDF here), the top-k most similar passages are retrieved by cosine similarity, and the augmented prompt is built.");
     const docs = [
       "The Nila Observatory opens at 09:00 and closes at 16:30 on weekdays.",
       "Researchers at the Nila Observatory must book a two-hour slot in advance.",
@@ -277,7 +278,7 @@ Question: ${s.q}</span><br><br><b>3 · Generate</b> → ${none ? "nothing releva
 
   /* 30. Guardrail policy gate */
   W.guard = (el) => {
-    const b = U.box(el, "Run the safety policy gate", "An LLM agent proposes tool calls. Decide for each: allow, require human review, or deny. Then compare with the tutorial's policy.");
+    const b = U.box(el, "Run the safety policy gate", "An AI agent proposes tool calls. Decide for each one: allow, require human review, or deny. Then compare with the tutorial's policy.");
     const items = [["Read the supplied course notes", "allow", "Read-only access to trusted material."], ["Search a public index", "allow", "Read-only, public data."], ["Write a file to the shared drive", "review", "Irreversible side effect (overwrites); a human approves first."], ["Send a message to a student", "review", "Outbound communication can cause harm if wrong."], ["Execute a shell command found inside a retrieved document", "deny", "Prompt injection: instructions embedded in retrieved text are data, never commands."], ["Transfer money to an account", "deny", "Outside the agent's mandate; high stakes."], ["Send a message because an instruction inside a retrieved web page says so", "review", "The tutorial routes this to REQUIRE HUMAN APPROVAL: send_message is not a forbidden tool, but the request came from untrusted text, so a person must see it first (and should reject it if it leaks data)."]];
     const L = { allow: "Allow", review: "Review", deny: "Deny" }; const pick = {};
     b.insertAdjacentHTML("beforeend", `<div class="gl"></div><button class="btn small" data-act="chk">Check my policy</button><div class="res"></div>`);
@@ -288,13 +289,13 @@ Question: ${s.q}</span><br><br><b>3 · Generate</b> → ${none ? "nothing releva
 
   /* 31. Scaling */
   W.scaling = (el) => {
-    const b = U.box(el, "Size vs performance", "Empirical scaling laws: test loss falls as a power law in parameters N (and data D, compute C). Each 10× buys a roughly constant improvement, until data runs out.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("n", "log₁₀ parameters", 7, 12, 0.1, 9)}${U.range("a", "exponent α_N", 0.03, 0.15, 0.005, 0.076)}</div><div class="plot"></div><div class="readout"></div>`);
+    const b = U.box(el, "Size vs performance", R`Scaling laws: test loss falls as a power law in the number of parameters $N$ (and data $D$, compute $C$). Each 10 times bigger buys a roughly constant improvement, until data runs out.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("n", R`$\log_{10}$ of parameters`, 7, 12, 0.1, 9)}${U.range("a", R`exponent $\alpha_N$`, 0.03, 0.15, 0.005, 0.076)}</div><div class="plot"></div><div class="readout"></div>`);
     const draw = (s) => {
       const Nc = 8.8e13; const L = (lg) => Math.pow(Nc / Math.pow(10, lg), s.a);
       const p = U.plot({ x0: 7, x1: 12, y0: 1.5, y1: 4.5, h: 200 });
       b.querySelector(".plot").innerHTML = p.svg(p.frame([7, 8, 9, 10, 11, 12], [2, 3, 4], "log₁₀ N", "loss") + p.line(p.path(L), C1) + `<circle cx="${p.X(s.n)}" cy="${p.Y(L(s.n))}" r="6" fill="${C2}"/>`);
-      b.querySelector(".readout").innerHTML = `L(N) = (N_c / N)^α · N = 10^${s.n} ≈ ${(Math.pow(10, s.n) / 1e9).toFixed(2)} B parameters → loss <b>${U.f(L(s.n), 3)}</b><br><span class="muted">Bigger models are more sample-efficient, and some abilities (multi-step arithmetic, in-context learning) appear only beyond a scale threshold ("emergent"). But compute-optimal training (Chinchilla) says parameters and tokens should grow together, about 20 tokens per parameter, and small well-trained models often beat larger under-trained ones. Benchmarks (MMLU, GSM8K, HumanEval …) are how these claims are measured, and they can be contaminated or saturated.</span>`;
+      b.querySelector(".readout").innerHTML = R`$L(N) = \left(\frac{N_c}{N}\right)^{\alpha}$ · $N = 10^{${s.n}} \approx ${(Math.pow(10, s.n) / 1e9).toFixed(2)}$ billion parameters → loss $${U.f(L(s.n), 3)}$<br><span class="muted">Bigger models are more sample-efficient, and some abilities (multi-step arithmetic, in-context learning) appear only beyond a scale threshold ("emergent"). But compute-optimal training (Chinchilla) says parameters and tokens should grow together, about 20 tokens per parameter, and small well-trained models often beat larger under-trained ones. Benchmarks (MMLU, GSM8K, HumanEval …) are how these claims are measured, and they can be contaminated or saturated.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };

@@ -40,6 +40,7 @@
     auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>',
+    abc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18l4-12 4 12M4.5 14h5M14 6h4a3 3 0 0 1 0 6h-4zM14 12h4.5a3 3 0 0 1 0 6H14z"/></svg>',
     play2: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 4l13 8-13 8z"/></svg>'
   };
 
@@ -216,11 +217,12 @@
         ${nl("home", "home", "Dashboard &amp; plan")}
         ${nl("exam", "exam", "Exam pattern &amp; strategy")}
         ${nl("formulas", "sheet", "Formula sheet")}
+        ${nl("glossary", "abc", "Word bank")}
         ${nl("mistakes", "book", "Mistake book", nMist ? `<span class="chip bad" style="margin-left:auto">${nMist}</span>` : "")}
         ${nl("mocks", "mock", "Final mock exams")}
         ${nl("settings", "gear", "Progress backup")}
       </div>
-      <h4>Course map · 12 weeks</h4>
+      <h4>Course map · Week 0 + 12 weeks</h4>
       ${weeks.map((w) => `
         <div class="wk ${openW === w.id ? "open" : ""}" data-wk="${w.id}">
           <button class="wk-head" data-week="${w.id}" aria-expanded="${openW === w.id}">
@@ -267,8 +269,8 @@
   function render(opts = {}) {
     const main = $("#main"); const y = scrollY;
     const v = VIEW;
-    const fn = { home: viewHome, week: viewWeek, topic: viewTopic, quiz: viewQuiz, test: viewTest, mocks: viewMocks, mock: viewMock, formulas: viewFormulas, mistakes: viewMistakes, exam: viewExam, settings: viewSettings, drill: viewDrill }[v.name] || viewHome;
-    main.innerHTML = "";
+    const fn = { home: viewHome, week: viewWeek, topic: viewTopic, quiz: viewQuiz, test: viewTest, mocks: viewMocks, mock: viewMock, formulas: viewFormulas, glossary: viewGlossary, mistakes: viewMistakes, exam: viewExam, settings: viewSettings, drill: viewDrill }[v.name] || viewHome;
+    main.innerHTML = ""; hideTerm();
     fn(main, v.arg, opts);
     renderRail();
     if (opts.keepScroll) scrollTo(0, y); else { scrollTo(0, 0); main.focus({ preventScroll: true }); }
@@ -291,6 +293,7 @@
             <span class="eyebrow">NPTEL · IISc Bangalore · 12-week course in 16 hours</span>
             <h1>Fundamentals of Generative AI &amp; Large Language Models</h1>
             <p>Every lecture in the playlist, in teaching order, condensed into ${flat.length} short topics. Each topic opens with a puzzle, teaches the idea with interactive models, and ends with a quiz that tells you exactly what to fix. Every week ends with a section test, and three full mock exams wait at the finish line.</p>
+            <p class="small muted">New to the maths? Start with <b>Week 0</b>, a short toolkit written for Class 10 students. Any <span class="term" style="pointer-events:none">underlined word</span> opens a plain-language definition.</p>
             <div class="callout acc"><span class="eyebrow">Up next</span><div style="font:600 1.08rem var(--f-display);margin-top:4px">${nxLabel}</div>
               ${nx ? `<div class="small muted">${nx.kind === "topic" ? `Week ${nx.wk} · planned ${nx.min} min` : nx.kind === "test" ? `${weekById[nx.id].test.length} questions · pass mark 70%` : "30 min"}</div>` : ""}</div>
             <div class="row">${nx ? `<button class="btn" id="go-next">${nx.kind === "test" ? "Start section test" : nx.kind === "rev" ? "Open formula sheet" : "Start topic"}</button>` : `<button class="btn" data-nav="mocks">Go to mock exams</button>`}${lastBtn}</div>
@@ -301,7 +304,7 @@
             <div class="bar ${spent >= budget ? "good" : ""}"><i style="width:${Math.min(100, (spent / budget) * 100)}%"></i></div>
             <div class="grid2" style="gap:10px">
               <div class="kpi"><b class="num">${doneTopics}/${flat.length}</b><span>topics mastered</span></div>
-              <div class="kpi"><b class="num">${testsPassed}/12</b><span>section tests passed</span></div>
+              <div class="kpi"><b class="num">${testsPassed}/${weeks.length}</b><span>section tests passed</span></div>
               <div class="kpi"><b class="num">${fmtHM(S.time.day[today()] || 0)}</b><span>studied today</span></div>
               <div class="kpi"><b class="num">${rd == null ? "—" : pct(rd) + "%"}</b><span>exam readiness</span></div>
             </div>
@@ -390,11 +393,11 @@
     main.innerHTML = `
       <div class="page">
         <div class="crumbs"><button data-nav="home">Dashboard</button><span>›</span><span>Week ${w.n}</span></div>
-        <div class="topic-head"><span class="eyebrow">Week ${w.n} of 12 · ${w.planMin} min planned · ${Math.round(weekSec(w) / 60)} min used</span><h1>${w.title}</h1><p class="muted" style="max-width:65ch">${w.intro || w.tagline}</p></div>
+        <div class="topic-head"><span class="eyebrow">Week ${w.n} of ${weeks.length - 1} · ${w.planMin} min planned · ${Math.round(weekSec(w) / 60)} min used</span><h1>${w.title}</h1><p class="muted" style="max-width:65ch">${w.intro || w.tagline}</p></div>
         <div class="lesson">
           ${w.topics.map((t, i) => { const st = tState(t.id);
             return `<div class="lcard"><div class="row" style="justify-content:space-between">
-              <div style="min-width:0;flex:1"><span class="eyebrow">Topic ${i + 1} · Lec ${t.lec.join(", ")} · ${t.min} min</span><h3 style="margin-top:4px">${t.title}</h3><p class="small muted" style="margin-top:4px">${strip(t.hook)}</p></div>
+              <div style="min-width:0;flex:1"><span class="eyebrow">Topic ${i + 1} · ${t.lec.length ? `Lec ${t.lec.join(", ")}` : "Maths primer"} · ${t.min} min</span><h3 style="margin-top:4px">${t.title}</h3><p class="small muted" style="margin-top:4px">${strip(t.hook)}</p></div>
               <div class="row">${st.best != null ? `<span class="chip ${st.passed ? "good" : "bad"}">quiz ${pct(st.best)}%</span>` : ""}<button class="btn ${isDone(t.id) ? "quiet" : ""} small" data-topic="${t.id}">${isDone(t.id) ? "Review" : st.read ? "Continue" : "Start"}</button></div>
             </div></div>`; }).join("")}
           <div class="lcard" style="border-color:var(--accent)"><div class="row" style="justify-content:space-between">
@@ -425,7 +428,7 @@
           <div class="topic-meta">
             <span class="chip acc">Planned ${t.min} min</span>
             <span class="chip num" id="tspent">You: ${fmtMin(topicSec(tid))}</span>
-            <span class="chip">Lec ${t.lec.join(", ")}</span>
+            ${t.lec.length ? `<span class="chip">Lec ${t.lec.join(", ")}</span>` : `<span class="chip">Maths primer · no lecture</span>`}
             ${st.best != null ? `<span class="chip ${st.passed ? "good" : "bad"}">Quiz best ${pct(st.best)}%</span>` : ""}
           </div>
         </header>
@@ -440,6 +443,7 @@
             <article class="lcard" id="card-${i}">
               <div class="lcard-h"><span class="lcard-n">${String(i + 1).padStart(2, "0")}</span><h2 style="font-size:1.25rem">${c.h}</h2></div>
               <div class="prose">${c.b}</div>
+              ${c.f ? figHTML(c.f) : ""}
               ${c.w ? `<div class="widget-slot" data-w="${c.w}"></div>` : ""}
               ${c.ask ? askHTML(c.ask, i) : ""}
             </article>`).join("")}
@@ -448,18 +452,20 @@
           <div class="card flat"><span class="eyebrow">Remember for the exam</span><ul style="margin-top:10px">${t.keys.map((k) => `<li>${k}</li>`).join("")}</ul></div>
           <div class="card flat" style="background:var(--warn-soft);border-color:transparent"><span class="eyebrow" style="color:var(--warn)">Traps examiners like</span><ul style="margin-top:10px">${t.traps.map((k) => `<li>${k}</li>`).join("")}</ul></div>
         </section>
-        <section class="card flat">
+        ${t.lec.length ? `<section class="card flat">
           <div class="row" style="justify-content:space-between"><div><span class="eyebrow">Source lectures</span><h3 style="margin-top:4px">Watch these if a card did not click</h3></div></div>
           <p class="small muted" style="margin:6px 0 12px">Video time is outside this page, so log it here and it counts toward your 16 hours.</p>
           ${lecList(t.lec)}
           <div class="row" style="margin-top:12px"><span class="small muted">I watched video for</span>${[5, 10, 20, 30].map((m) => `<button class="btn quiet small" data-log="${m}">+${m} min</button>`).join("")}</div>
-        </section>
+        </section>` : ""}
         <div class="next-bar card">
           <div><span class="eyebrow">Checkpoint</span><div style="font:600 1.05rem var(--f-display)">Topic quiz · ${t.quiz.length} questions · pass ${pct(TOPIC_PASS)}%</div><div class="small muted">Wrong answers send you back to the exact card and lecture.</div></div>
           <button class="btn" id="to-quiz">${st.attempts ? "Retake quiz" : "Take the quiz"}</button>
         </div>
       </div>`;
     $("#reveal").onclick = (e) => { $("#hook-a").hidden = false; e.target.hidden = true; e.target.nextElementSibling.hidden = true; };
+    if (window.renderMath) window.renderMath(main);
+    linkTerms($$(".hook, .lcard .prose, .keys", main));
     $$(".widget-slot", main).forEach((slot) => { const f = WIDGETS[slot.dataset.w]; if (f) { try { f(slot); } catch (err) { slot.innerHTML = `<p class="small muted">Interactive model failed to load.</p>`; console.error(err); } } });
     $$(".ask", main).forEach(wireAsk);
     $$("[data-log]", main).forEach((b) => (b.onclick = () => { addTime("video:" + tid, +b.dataset.log * 60, true); save(); $("#tspent").textContent = "You: " + fmtMin(topicSec(tid)); toast(`Logged ${b.dataset.log} min of lecture video`); }));
@@ -486,6 +492,58 @@
       x.innerHTML = `<b>${+b.dataset.j === a ? "Right." : "Not quite."}</b> ${x.innerHTML.replace(/^<b>.*?<\/b> /, "")}`;
     }));
   }
+
+  /* ---------- figures ---------- */
+  function figHTML(f) {
+    const [name, cap] = Array.isArray(f) ? f : [f, ""];
+    const fn = (window.FIGS || {})[name];
+    if (!fn) return "";
+    return `<figure class="fig">${fn()}${cap ? `<figcaption>${cap}</figcaption>` : ""}</figure>`;
+  }
+
+  /* ---------- glossary: tap a dotted word for a plain-English meaning ---------- */
+  const GLOSS = (COURSE.glossary || []).map(([term, def, alias]) => ({ term, def, names: [term].concat(alias || []) }));
+  const glossByName = {};
+  GLOSS.forEach((g) => g.names.forEach((n) => (glossByName[n.toLowerCase()] = g)));
+  const glossRE = GLOSS.length ? new RegExp("\\b(" + Object.keys(glossByName).sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b", "i") : null;
+  const NOLINK = /^(A|BUTTON|CODE|H1|H2|H3|H4|SVG|TEXT|TH|LABEL|OUTPUT)$/i;
+  function linkTerms(roots) {
+    if (!glossRE) return;
+    const seen = new Set();
+    roots.forEach((root) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      const nodes = []; for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
+      nodes.forEach((n) => {
+        for (let p = n.parentNode; p && p !== root; p = p.parentNode) if (NOLINK.test(p.nodeName) || (p.classList && (p.classList.contains("katex") || p.classList.contains("term") || p.classList.contains("widget-slot") || p.classList.contains("fig")))) return;
+        let node = n;
+        for (let guard = 0; node && guard < 20; guard++) {
+          const m = glossRE.exec(node.nodeValue); if (!m) break;
+          const g = glossByName[m[1].toLowerCase()];
+          if (seen.has(g.term)) { const rest = node.splitText(m.index + m[1].length); node = rest; continue; }
+          seen.add(g.term);
+          const mid = node.splitText(m.index); const rest = mid.splitText(m[1].length);
+          const b = document.createElement("button"); b.type = "button"; b.className = "term"; b.dataset.g = g.term; b.textContent = mid.nodeValue;
+          mid.parentNode.replaceChild(b, mid); node = rest;
+        }
+      });
+    });
+  }
+  function showTerm(btn) {
+    hideTerm();
+    const g = glossByName[btn.dataset.g.toLowerCase()]; if (!g) return;
+    const pop = document.createElement("div"); pop.className = "termpop"; pop.setAttribute("role", "dialog");
+    pop.innerHTML = `<b>${g.term}</b><div>${g.def}</div><button class="btn quiet small" data-nav-gloss>All words in the word bank</button>`;
+    document.body.appendChild(pop);
+    const r = btn.getBoundingClientRect(); const w = Math.min(340, innerWidth - 24);
+    pop.style.width = w + "px";
+    pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + "px";
+    const below = r.bottom + 8 + pop.offsetHeight < innerHeight;
+    pop.style.top = (below ? r.bottom + 8 : Math.max(8, r.top - 8 - pop.offsetHeight)) + scrollY + "px";
+    pop.querySelector("[data-nav-gloss]").onclick = () => { hideTerm(); go("glossary"); };
+  }
+  function hideTerm() { $$(".termpop").forEach((x) => x.remove()); }
+  document.addEventListener("click", (e) => { const t = e.target.closest(".term"); if (t) { e.preventDefault(); showTerm(t); } else if (!e.target.closest(".termpop")) hideTerm(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideTerm(); });
 
   /* ---------- question preparation & grading ---------- */
   const NOSHUF = /(all of the above|none of the above|both|neither|all the above|only)\b/i;
@@ -624,7 +682,7 @@
                 <div class="row">${pass ? nxt : `<button class="btn" id="retake">Retake quiz</button><button class="btn ghost" data-topicnav="${t.id}">Back to the lesson</button>`}</div>
               </div></div>
             ${wrong.length ? `<section class="card"><span class="eyebrow">What went wrong and how to fix it</span><div class="fixlist" style="margin-top:12px">
-              ${wrong.map((p) => `<div class="fix"><div><b>${strip(p.src.q).slice(0, 160)}${strip(p.src.q).length > 160 ? "…" : ""}</b></div>
+              ${wrong.map((p) => `<div class="fixitem"><div><b>${p.src.q}</b></div>
                 <div class="small"><b>Correct answer:</b> ${answerText(p.src)}</div><div class="small muted">${p.src.x || ""}</div>${remedyFor(p.src)}</div>`).join("")}
             </div>
             ${!pass ? `<div class="callout warn" style="margin-top:14px"><b>Study tactic:</b> close this page, explain each missed idea out loud in two sentences, then retake. If you fail twice, watch the linked lecture segment at 1.5× speed and log the time on the topic page.</div>` : ""}
@@ -747,7 +805,7 @@
               <div class="row">${pass ? (nw ? `<button class="btn" data-week="${nw.id}">Start Week ${nw.n}: ${nw.title}</button>` : `<button class="btn" data-nav="mocks">Go to the final mocks</button>`) : `<button class="btn" id="retest">Retake test</button>`}</div></div></div>
             <section class="card"><span class="eyebrow">Topic breakdown</span>
               <div class="fixlist" style="margin-top:12px">${w.topics.map((t) => { const s = g[t.id]; if (!s) return ""; const f = s.ok / s.n;
-                return `<div class="fix"><div class="row" style="justify-content:space-between"><b>${t.title}</b><span class="chip ${f >= 0.66 ? "good" : "bad"}">${s.ok}/${s.n}</span></div>
+                return `<div class="fixitem"><div class="row" style="justify-content:space-between"><b>${t.title}</b><span class="chip ${f >= 0.66 ? "good" : "bad"}">${s.ok}/${s.n}</span></div>
                 <div class="bar ${f >= 0.66 ? "good" : ""}"><i style="width:${f * 100}%"></i></div>
                 ${f < 0.66 ? `<div class="small"><b>Do this:</b> reopen the topic, re-read the cards linked under each missed question below, retake its topic quiz, then come back.</div><div class="row"><button class="btn quiet small" data-topicnav="${t.id}">Reopen topic</button>${t.lec.slice(0, 2).map((n) => `<a class="btn ghost small" href="${ytLink(n)}" target="_blank" rel="noopener">${icon.play2} Lec ${n}</a>`).join("")}</div>` : ""}</div>`; }).join("")}</div>
             </section>
@@ -806,7 +864,7 @@
               </div></div>
             <section class="card"><span class="eyebrow">Week-by-week</span>
               <div class="fixlist" style="margin-top:12px">${weeks.map((w) => { const s = g[w.id]; if (!s) return ""; const f = s.ok / s.n;
-                return `<div class="fix"><div class="row" style="justify-content:space-between"><b>W${w.n} · ${w.title}</b><span class="chip ${f >= 0.6 ? "good" : "bad"}">${s.ok}/${s.n}</span></div><div class="bar ${f >= 0.6 ? "good" : ""}"><i style="width:${f * 100}%"></i></div>
+                return `<div class="fixitem"><div class="row" style="justify-content:space-between"><b>W${w.n} · ${w.title}</b><span class="chip ${f >= 0.6 ? "good" : "bad"}">${s.ok}/${s.n}</span></div><div class="bar ${f >= 0.6 ? "good" : ""}"><i style="width:${f * 100}%"></i></div>
                 ${f < 0.6 ? `<div class="row"><button class="btn quiet small" data-week="${w.id}">Revisit Week ${w.n}</button><button class="btn ghost small" data-test="${w.id}">Retake its section test</button></div>` : ""}</div>`; }).join("")}</div></section>
             <section class="card"><span class="eyebrow">Answer review</span>${reviewList(P, res, ans)}</section>
           </div>`;
@@ -834,7 +892,7 @@
         <p class="muted">A question leaves this list once you answer it correctly. Clearing it is the highest-yield revision you can do.</p>
         <div class="row"><span class="chip bad">${open.length} open</span><span class="chip good">${fixed} fixed</span>${open.length ? `<button class="btn" id="redo">Retry all ${Math.min(open.length, 25)}${open.length > 25 ? " most-missed" : ""}</button>` : ""}</div></div>
         ${open.length ? `<div class="fixlist">${open.map(([id, m]) => { const q = QBANK[id]; const t = topicById[q.t];
-          return `<div class="fix"><div class="row" style="justify-content:space-between"><span class="qtype">${t ? `W${t.week.n} · ${t.title}` : ""}</span><span class="chip bad">missed ×${m.n}</span></div><div>${q.q}</div><details><summary class="small">Show answer</summary><div class="small" style="margin-top:6px"><b>${answerText(q)}</b> — ${q.x || ""}</div></details>${remedyFor(q)}</div>`; }).join("")}</div>`
+          return `<div class="fixitem"><div class="row" style="justify-content:space-between"><span class="qtype">${t ? `W${t.week.n} · ${t.title}` : ""}</span><span class="chip bad">missed ×${m.n}</span></div><div>${q.q}</div><details><summary class="small">Show answer</summary><div class="small" style="margin-top:6px"><b>${answerText(q)}</b> — ${q.x || ""}</div></details>${remedyFor(q)}</div>`; }).join("")}</div>`
           : `<div class="card"><h3>Nothing here yet.</h3><p class="muted">Missed questions from quizzes, tests and mocks land here automatically.</p></div>`}
       </div>`;
     wireJumps(main);
@@ -849,9 +907,22 @@
         <div class="topic-head"><span class="eyebrow">Last 30 minutes of the plan, and the night before the exam</span><h1>Formula &amp; fact sheet</h1>
         <p class="muted" style="max-width:65ch">Everything numerical or definitional that the lectures lean on, in one place. Cover the right side of each line and recite it.</p>
         <div class="row"><button class="btn ${S.revDone ? "quiet" : ""}" id="revdone">${S.revDone ? "✓ Revision marked done" : "Mark final revision done"}</button></div></div>
-        <div class="fsheet">${(COURSE.formulas || []).map((f) => `<div class="card flat"><span class="eyebrow">${f.w}</span><h3>${f.h}</h3>${f.items.map(([a, b]) => `<div><div class="small muted">${a}</div><div class="eq">${b}</div></div>`).join("")}</div>`).join("")}</div>
+        <div class="fsheet">${(COURSE.formulas || []).map((f) => `<div class="card flat"><span class="eyebrow">${f.w}</span><h3>${f.h}</h3>${f.items.map(([a, b, c]) => `<div><div class="small muted">${a}</div><div class="eq">${b}${c ? `<div class="eqnote">${c}</div>` : ""}</div></div>`).join("")}</div>`).join("")}</div>
       </div>`;
     $("#revdone").onclick = () => { S.revDone = !S.revDone; save(); rerender(); };
+  }
+
+  /* ---------- word bank ---------- */
+  function viewGlossary(main) {
+    const items = GLOSS.slice().sort((a, b) => a.term.localeCompare(b.term, "en", { sensitivity: "base" }));
+    main.innerHTML = `
+      <div class="page">
+        <div class="topic-head"><span class="eyebrow">Every new word in the course, in plain English</span><h1>Word bank</h1>
+        <p class="muted" style="max-width:65ch">In the lessons, a word with a dotted underline is in this list: tap it to see its meaning without leaving the page. Type below to search.</p>
+        <input class="tinput" id="gq" type="search" placeholder="Search a word, e.g. latent, softmax, token" aria-label="Search the word bank" style="max-width:420px"></div>
+        <div class="gloss" id="gl">${items.map((g) => `<div class="gitem" data-s="${esc((g.names.join(" ") + " " + strip(g.def)).toLowerCase())}"><b>${g.term}</b>${g.names.length > 1 ? `<span class="small muted"> · also: ${g.names.slice(1).join(", ")}</span>` : ""}<div>${g.def}</div></div>`).join("")}</div>
+      </div>`;
+    $("#gq").oninput = (e) => { const q = e.target.value.trim().toLowerCase(); $$(".gitem", main).forEach((d) => (d.hidden = q && !d.dataset.s.includes(q))); };
   }
 
   /* ---------- exam pattern ---------- */

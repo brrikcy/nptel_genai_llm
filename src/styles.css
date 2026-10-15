@@ -223,9 +223,11 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 .prose th { background: var(--sheet-2); font-weight: 700; }
 .tablewrap { overflow-x: auto; max-width: 100%; }
 .eq {
-  font-family: var(--f-mono); font-size: .95rem; background: var(--sheet-2); border: 1px solid var(--rule);
-  border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; overflow-x: auto; white-space: nowrap;
+  font-size: 1rem; background: var(--sheet-2); border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent); padding: 8px 14px; border-radius: 6px; overflow-x: auto; overflow-y: hidden;
 }
+.eq .katex-display { margin: .35em 0; }
+.eq .eqnote { display: block; font-size: .86rem; color: var(--ink-2); }
 .eq.wrap { white-space: normal; }
 .analogy { border-left: 3px solid var(--hi); padding: 4px 0 4px 14px; font-style: italic; color: var(--ink-2); }
 .ask { border: 1px dashed var(--accent); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--accent-soft); }
@@ -312,8 +314,8 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 .result-head { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
 .result-head > div { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 8px; }
 .fixlist { display: flex; flex-direction: column; gap: 10px; }
-.fix { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--sheet); }
-.fix .row { gap: 8px; }
+.fixitem { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--sheet); }
+.fixitem .row { gap: 8px; }
 .review-q { border-top: 1px solid var(--rule); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 
 /* exam (NPTEL-style) */
@@ -356,7 +358,6 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
   .brand-text span { display: none; }
   .clock-read span { display: none; }
   .lcard, .card { padding: 16px; }
-  .eq { white-space: normal; overflow-wrap: anywhere; }
 }
 @media (max-width: 460px) {
   .weeks { grid-template-columns: minmax(0, 1fr); }
@@ -365,3 +366,37 @@ code { font-size: .88em; background: var(--sheet-2); border: 1px solid var(--rul
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- math (KaTeX) ---------- */
+.katex { font-size: 1.08em; position: relative; } /* keeps the hidden MathML copy inside scroll boxes */
+.mathd { display: block; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.mathd .katex-display { margin: .4em 0; }
+.opt .katex, .qtext .katex { font-size: 1.05em; }
+.fsheet .eq { white-space: normal; }
+
+/* ---------- beginner helpers ---------- */
+.plain { background: var(--good-soft); border-radius: 8px; padding: 10px 14px; }
+.plain::before { content: "In plain words"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--good); margin-bottom: 2px; }
+.examwords { border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 14px; background: var(--sheet-2); }
+.examwords::before { content: "Exam words"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
+.steps { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px 10px 14px; background: var(--sheet); }
+.steps::before { content: "Worked example"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--warn); margin-bottom: 4px; }
+.steps ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+.remember { background: var(--hi-soft); border-radius: 8px; padding: 8px 14px; font-weight: 600; }
+.fig { margin: 4px 0 0; padding: 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet-2); display: flex; flex-direction: column; gap: 6px; }
+.fig svg { width: 100%; height: auto; max-height: 340px; display: block; }
+.fig svg text { font: 13px var(--f-body); fill: var(--ink); }
+.fig svg text.s { font-size: 11px; fill: var(--ink-2); }
+.fig svg text.b { font-weight: 700; }
+.fig figcaption { font-size: .86rem; color: var(--ink-2); }
+.term { all: unset; cursor: help; border-bottom: 2px dotted var(--accent); color: inherit; }
+.term:hover, .term:focus-visible { background: var(--accent-soft); }
+.termpop { position: absolute; z-index: 60; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: .94rem; }
+.termpop .btn { align-self: flex-start; }
+.gloss { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.gitem { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
+.gitem[hidden] { display: none; }
+.examfocus { margin-top: 10px; border: 1px solid var(--rule); border-left: 3px solid var(--good); border-radius: 8px; padding: 10px 14px; background: var(--good-soft); }
+.examfocus::before { content: "What the exam asks"; display: block; font: 600 .7rem/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--good); margin-bottom: 2px; }
+/* Long inline formulas scroll inside their own box on narrow screens instead of widening the page. */
+.mathi.long { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: middle; }
