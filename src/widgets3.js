@@ -377,4 +377,42 @@
     b.addEventListener("click", (e) => { const a = e.target.closest("[data-act]"); if (!a) return; if (a.dataset.act === "new") { seed++; draw(); return; } clearInterval(timer); const inp = b.querySelector("[data-k=k]"); let k = 0; timer = setInterval(() => { if (!inp.isConnected || k > 100) { clearInterval(timer); return; } inp.value = k; inp.dispatchEvent(new Event("input")); k += 4; }, 60); });
     draw();
   };
+
+  /* ---------- Week 8 ---------- */
+
+  /* Sinusoidal time embedding as a barcode */
+  W.timeemb = (el) => {
+    const b = U.box(el, "The time embedding as a barcode", R`Each row is one time step $t$; each column is one entry of its embedding, $\sin$ or $\cos$ at a different speed (left columns change fast, right columns slowly). Move $t$: no two rows look the same, so the network can always tell which step it is on.`);
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("t", R`Time step $t$`, 0, 1000, 10, 50)}</div><canvas width="560" height="160" class="wcanvas cv" style="aspect-ratio:560/160"></canvas><div class="readout"></div>`);
+    const d = 32, emb = (t) => Array.from({ length: d }, (_, j) => { const i = Math.floor(j / 2), f = t / Math.pow(10000, (2 * i) / d); return j % 2 ? Math.cos(f) : Math.sin(f); });
+    const draw = (s) => {
+      const ctx = b.querySelector(".cv").getContext("2d"); ctx.clearRect(0, 0, 560, 160);
+      const rows = [0, 10, 50, 100, 250, 500, 750, 1000];
+      rows.concat([s.t]).forEach((tt, r) => { const e = emb(tt), y = r < rows.length ? r * 16 : 136; e.forEach((v, j) => { const c = Math.round((v + 1) * 127.5); ctx.fillStyle = `rgb(${c},${Math.round(c * 0.85 + 30)},${255 - c})`; ctx.fillRect(70 + j * 15, y + 2, 14, 13); }); ctx.fillStyle = U.css("--ink"); ctx.font = "11px monospace"; ctx.textAlign = "right"; ctx.fillText(r < rows.length ? "t = " + tt : "you: " + tt, 64, y + 13); });
+      const e = emb(s.t);
+      b.querySelector(".readout").innerHTML = R`$\text{TE}(${s.t})$ first entries: $[${e.slice(0, 4).map((v) => U.f(v, 3)).join(", ")}, \ldots]$ (length $d = ${d}$ here; real models use 128–512).<br><span class="muted">Blue ≈ $-1$, grey ≈ $0$, yellow ≈ $+1$. The same formula is the Transformer's positional encoding (Week 10), with word position instead of time step.</span>`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
+
+  /* Toy cross-attention: image regions attend to prompt words */
+  W.crossattn = (el) => {
+    const b = U.box(el, "Cross-attention: which words does each region listen to?", "The prompt is “a yellow butterfly on a purple flower”. Click a region of the picture: its query is compared with every word's key, and softmax turns the scores into attention weights.");
+    b.insertAdjacentHTML("beforeend", `${U.seg("r", [["top", "butterfly region"], ["bot", "flower region"], ["sky", "background"]], "top")}<div class="plot"></div><div class="readout"></div>`);
+    const words = ["a", "yellow", "butterfly", "on", "a", "purple", "flower"];
+    const scores = { top: [0.1, 2.2, 2.6, 0.2, 0.1, 0.3, 0.4], bot: [0.1, 0.3, 0.4, 0.3, 0.1, 2.3, 2.7], sky: [0.4, 0.3, 0.3, 0.5, 0.4, 0.3, 0.3] };
+    const draw = (s) => {
+      const sc = scores[s.r], e = sc.map(Math.exp), tot = e.reduce((a, x) => a + x, 0), w = e.map((x) => x / tot);
+      const hl = { top: 'stroke="var(--accent)" stroke-width="4"', bot: "", sky: "" };
+      let g = `<rect x="10" y="10" width="180" height="180" rx="8" fill="var(--sheet-2)" stroke="${s.r === "sky" ? "var(--accent)" : "var(--rule)"}" stroke-width="${s.r === "sky" ? 4 : 1}"/>
+        <g ${s.r === "top" ? 'opacity="1"' : 'opacity=".55"'}><ellipse cx="80" cy="70" rx="26" ry="18" fill="#f2c200"/><ellipse cx="120" cy="70" rx="26" ry="18" fill="#f2c200"/><rect x="97" y="55" width="6" height="34" rx="3" fill="var(--ink)"/></g>
+        <g ${s.r === "bot" ? 'opacity="1"' : 'opacity=".55"'}>${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="${100 + 22 * Math.cos((a * Math.PI) / 180)}" cy="${140 + 22 * Math.sin((a * Math.PI) / 180)}" rx="15" ry="11" fill="#8e44ad"/>`).join("")}<circle cx="100" cy="140" r="9" fill="#f5d76e"/></g>
+        ${s.r === "top" ? '<rect x="45" y="42" width="110" height="56" rx="8" fill="none" stroke="var(--accent)" stroke-width="3"/>' : s.r === "bot" ? '<rect x="62" y="104" width="76" height="74" rx="8" fill="none" stroke="var(--accent)" stroke-width="3"/>' : ""}`;
+      words.forEach((wd, i) => { const y = 18 + i * 25; g += `<text x="225" y="${y + 13}">${wd}</text><rect x="300" y="${y}" width="${w[i] * 240}" height="17" rx="3" fill="var(--accent)"/><text x="${306 + w[i] * 240}" y="${y + 13}">${U.f(w[i], 2)}</text>`; });
+      b.querySelector(".plot").innerHTML = `<svg class="chart" viewBox="0 0 560 200">${g}</svg>`;
+      const top2 = w.map((x, i) => [x, words[i]]).sort((a, bb) => bb[0] - a[0]).slice(0, 2).map((x) => "“" + x[1] + "”");
+      b.querySelector(".readout").innerHTML = R`weights $= \text{softmax}\!\left(\frac{q \cdot k}{\sqrt{d}}\right)$ over the 7 words → this region mostly listens to ${top2.join(" and ")}.<br>The region's new features are the weighted mix of the words' values $V$, so “yellow” paints the butterfly and “purple” the flower.`;
+    };
+    const st = U.bind(b, draw); draw(st);
+  };
 })();

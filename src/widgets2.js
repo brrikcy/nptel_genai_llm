@@ -35,17 +35,17 @@
 
   /* 18. Guidance scale */
   W.cfg = (el) => {
-    const b = U.box(el, "Classifier-free guidance as vector arithmetic", "The same U-Net predicts noise twice: with the prompt (conditional) and with an empty prompt (unconditional). Guidance extrapolates along their difference.");
-    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("w", "Guidance scale w", 0, 12, 0.5, 7.5)}</div><div class="plot"></div><div class="readout"></div>`);
+    const b = U.box(el, "Classifier-free guidance as arrows", "The same U-Net guesses the noise twice: with the prompt and with an empty prompt. Guidance keeps going along the difference between the two arrows.");
+    b.insertAdjacentHTML("beforeend", `<div class="ctrls">${U.range("w", R`Guidance scale $w$`, 0, 12, 0.5, 7.5)}</div><div class="plot"></div><div class="readout"></div>`);
     const draw = (s) => {
       const p = U.plot({ x0: -1, x1: 9, y0: -1, y1: 5, h: 230 });
       const u = [1.5, 0.8], c = [2.4, 1.6]; const g = [u[0] + s.w * (c[0] - u[0]), u[1] + s.w * (c[1] - u[1])];
       const clamp = (v, a, bb) => Math.max(a, Math.min(bb, v));
       const arrow = (a, col, label) => `<line x1="${p.X(0)}" y1="${p.Y(0)}" x2="${p.X(clamp(a[0], -1, 9))}" y2="${p.Y(clamp(a[1], -1, 5))}" stroke="${col}" stroke-width="3" marker-end="url(#ah)"/><text x="${p.X(clamp(a[0], -1, 8.6)) + 6}" y="${p.Y(clamp(a[1], -1, 4.8)) - 6}" style="fill:${col};font-weight:700">${label}</text>`;
-      const svg = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>` + p.frame([0, 2, 4, 6, 8], [0, 2, 4]) + arrow(u, C2, "ε(x_t, ∅)") + arrow(c, C3, "ε(x_t, y)") + arrow(g, C1, "ε̃");
+      const svg = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>` + p.frame([0, 2, 4, 6, 8], [0, 2, 4]) + arrow(u, C2, "without prompt") + arrow(c, C3, "with prompt") + arrow(g, C1, "guided");
       b.querySelector(".plot").innerHTML = p.svg(svg);
-      const msg = s.w === 0 ? "w = 0: purely unconditional, the prompt is ignored." : s.w === 1 ? "w = 1: plain conditional prediction, no extra push." : s.w < 1 ? "0 < w < 1: interpolates between the unconditional and conditional predictions." : s.w <= 9 ? "w > 1: extrapolates past the conditional prediction. Samples follow the prompt more closely; diversity drops. Stable Diffusion's default is about 7.5." : "Very large w: oversaturated, distorted images with little diversity.";
-      b.querySelector(".readout").innerHTML = `ε̃ = ε(x_t, ∅) + w · (ε(x_t, y) − ε(x_t, ∅)) = [${U.f(g[0], 2)}, ${U.f(g[1], 2)}]<br>${msg}<br>The course writes the same thing as ε̂ = (1 + s)·ε_cond − s·ε_uncond, so w = 1 + s; here s = ${U.f(s.w - 1, 2)}.<br><span class="muted">Classifier guidance needs a separately trained noisy-image classifier and adds s·∇log p(y|x_t). Classifier-free guidance needs none: you randomly drop the prompt (about 10–20% of the time) during training so one network learns both predictions.</span>`;
+      const msg = s.w === 0 ? R`$w = 0$: purely unconditional, the prompt is ignored.` : s.w === 1 ? R`$w = 1$: the plain conditional guess, no extra push.` : s.w < 1 ? R`$0 \lt w \lt 1$: in between the two guesses.` : s.w <= 9 ? R`$w > 1$: pushes past the conditional guess. Pictures follow the prompt more closely; variety drops. Stable Diffusion's default is about $7.5$.` : R`Very large $w$: over-saturated, distorted pictures with little variety.`;
+      b.querySelector(".readout").innerHTML = R`$\tilde{\varepsilon} = \varepsilon(x_t, \varnothing) + w\,\big(\varepsilon(x_t, y) - \varepsilon(x_t, \varnothing)\big) = [${U.f(g[0], 2)}, ${U.f(g[1], 2)}]$<br>${msg}<br>The course writes the same thing as $\hat{\varepsilon} = (1 + s)\,\varepsilon_{\text{cond}} - s\,\varepsilon_{\text{uncond}}$, so $w = 1 + s$; here $s = ${U.f(s.w - 1, 2)}$.<br><span class="muted">Classifier guidance needs a separately trained noisy-image classifier. Classifier-free guidance needs none: the prompt is randomly dropped (about 10–20% of the time) during training so one network learns both guesses.</span>`;
     };
     const st = U.bind(b, draw); draw(st);
   };

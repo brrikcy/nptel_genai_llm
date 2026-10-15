@@ -364,4 +364,30 @@
     ${["pick a clean x₀", "pick a random step t", "draw noise ε ~ N(0, I)", "x_t = √ᾱ_t x₀ + √(1−ᾱ_t) ε", "network guesses ε from (x_t, t)", "loss = (ε − guess)², update"].map((s, i) => `${t(20, 60 + i * 26, `${i + 1}. ${s}`, "s", "start")}`).join("")}
     ${box(290, 10, 265, 210, "var(--sheet)", G)}${t(422, 32, "GENERATING (in order)", "b")}
     ${["start from pure noise x_T", "for t = T, T−1, …, 1:", "   guess the noise in x_t", "   remove a bit of it → x_{t−1}", "   (add fresh noise, except at t = 1)", "return x₀: a new image"].map((s, i) => `${t(305, 60 + i * 26, i ? s : `1. ${s}`, "s", "start")}`).join("")}`, "DDPM training and sampling");
+
+  /* ---------- Week 8 ---------- */
+  F.resBlockFig = () => {
+    const st = ["GroupNorm", "SiLU", "Conv₁", "+ time", "GroupNorm", "SiLU", "Conv₂"];
+    let g = `${t(18, 105, "H", "b")}${arrow(30, 100, 48, 100)}`;
+    st.forEach((n, i) => { const x = 50 + i * 66; g += `${box(x, 80, 58, 40, n === "+ time" ? "var(--warn-soft)" : SOFT, n === "+ time" ? W : A, 6)}${t(x + 29, 104, n, "s")}${i < 6 ? arrow(x + 59, 100, x + 65, 100) : ""}`; });
+    g += `${box(248, 10, 74, 34, "var(--warn-soft)", W)}${t(285, 32, "W_t·TE(t)", "s")}${arrow(285, 46, 285, 78, W)}`;
+    g += `${arrow(512, 100, 530, 100)}<circle cx="540" cy="100" r="11" fill="${SH}" stroke="${INK}"/>${t(540, 105, "+", "b")}`;
+    g += `<path d="M38 100 L38 160 L540 160 L540 113" fill="none" stroke="${G}" stroke-width="2" stroke-dasharray="5 4"/>${t(290, 178, "residual: add the input H back at the end", "s")}`;
+    return svg(560, 190, g, "Residual block");
+  };
+  F.guidanceFig = () => {
+    const O = [60, 170], U2 = [190, 120], C = [270, 80], G2 = [470, -20 + 50];
+    return svg(560, 200, `<circle cx="${O[0]}" cy="${O[1]}" r="5" fill="${INK}"/>${t(O[0], O[1] + 20, "x_t", "s")}
+      ${arrow(O[0], O[1], U2[0], U2[1], MUTE)}${t(U2[0] - 10, U2[1] + 22, "guess without prompt", "s")}
+      ${arrow(O[0], O[1], C[0], C[1], G)}${t(C[0] - 20, C[1] - 12, "guess with prompt", "s")}
+      <line x1="${U2[0]}" y1="${U2[1]}" x2="${G2[0]}" y2="${G2[1]}" stroke="${H}" stroke-width="2" stroke-dasharray="6 4"/>${arrow(O[0], O[1], G2[0], G2[1], A)}
+      ${t(G2[0] - 30, G2[1] - 10, "guided (w = 3)", "b")}${t(380, 150, "keep going along the difference", "s")}`, "Guidance as arrows");
+  };
+  F.sdPipeline = () => svg(560, 220, `
+    ${box(5, 10, 150, 40, "var(--warn-soft)", W)}${t(80, 35, "prompt: “a red cube”", "s")}${arrow(80, 52, 80, 70, W)}${box(25, 72, 110, 36, SOFT, A)}${t(80, 95, "CLIP text encoder", "s")}
+    ${box(5, 150, 110, 44, SH, MUTE)}${t(60, 170, "noise z_T", "s")}${t(60, 186, "64×64×4", "s")}${arrow(117, 172, 160, 172)}
+    <path d="M162 130 L230 150 L230 195 L162 215Z" fill="${SOFT}" stroke="${A}"/><path d="M232 150 L300 130 L300 215 L232 195Z" fill="${SOFT}" stroke="${A}"/>${t(232, 124, "U-Net × T steps", "s")}
+    <path d="M135 90 Q230 90 230 145" fill="none" stroke="${W}" stroke-width="2" stroke-dasharray="5 4"/>${t(240, 88, "cross-attention", "s", "start")}
+    ${arrow(302, 172, 340, 172)}${box(342, 152, 90, 40, SH, MUTE)}${t(387, 170, "clean z₀", "s")}${t(387, 185, "64×64×4", "s")}
+    ${arrow(434, 172, 455, 172)}${box(457, 140, 96, 64, H, INK)}${t(505, 166, "VAE decoder", "s")}${t(505, 185, "→ 512×512×3", "s")}`, "Stable Diffusion pipeline");
 })();
