@@ -6,23 +6,39 @@ Outputs
                              except for the optional Google Fonts)
   dist/genai-sprint.html     the same page as an HTML fragment for publishing as a claude.ai Artifact
 """
+import base64
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).parent
 SRC = ROOT / "src"
+KATEX = ROOT / "vendor" / "katex"
 SCRIPTS = (
     ["lectures.js"]
-    + [f"content/w{n:02d}.js" for n in range(1, 13)]
-    + ["content/finals.js", "content/formulas.js", "widgets1.js", "widgets2.js", "app.js"]
+    + [f"content/w{n:02d}.js" for n in range(0, 13)]
+    + ["content/finals.js", "content/formulas.js", "content/glossary.js",
+       "figures.js", "widgets1.js", "widgets2.js", "widgets3.js", "math.js", "app.js"]
 )
 TITLE = "GenAI 16-Hour Sprint"
 FONTS = ("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400"
          "&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap")
 
 
+def katex_css() -> str:
+    """KaTeX stylesheet with its woff2 fonts embedded, so equations render offline."""
+    css = (KATEX / "katex.min.css").read_text(encoding="utf-8")
+
+    def font(m: re.Match) -> str:
+        data = base64.b64encode((KATEX / "fonts" / f"{m.group(1)}.woff2").read_bytes()).decode()
+        return f'src:url(data:font/woff2;base64,{data}) format("woff2")'
+
+    return re.sub(r'src:url\(fonts/([\w-]+)\.woff2\) format\("woff2"\)[^;}]*', font, css)
+
+
 def body() -> str:
-    css = (SRC / "styles.css").read_text(encoding="utf-8")
-    js = ["window.COURSE = { weeks: [], finals: [], formulas: [] };"]
+    css = katex_css() + "\n" + (SRC / "styles.css").read_text(encoding="utf-8")
+    js = [(KATEX / "katex.min.js").read_text(encoding="utf-8"),
+          "var R = String.raw;\nwindow.COURSE = { weeks: [], finals: [], formulas: [], glossary: [] };"]
     for name in SCRIPTS:
         js.append(f"/* ===== {name} ===== */\n" + (SRC / name).read_text(encoding="utf-8"))
     script = "\n".join(js).replace("</script", "<\\/script")

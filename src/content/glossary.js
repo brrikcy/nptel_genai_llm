@@ -1,0 +1,32 @@
+/* Word bank: [term, plain-English meaning, [other spellings]]. Lessons underline the first use of each word on a page. */
+COURSE.glossary.push(
+  /* Week 0: maths */
+  ["probability", R`A number from 0 to 1 saying how likely something is. 0 = impossible, 1 = certain.`, ["probabilities"]],
+  ["conditional probability", R`The chance of one thing <i>given</i> that another is already true, written $p(y \mid x)$. Shrink to the cases where $x$ is true, then count.`],
+  ["joint probability", R`The chance of two things happening together, written $p(x, y)$.`],
+  ["Bayes' rule", R`$p(y \mid x) = \frac{p(x \mid y)\,p(y)}{p(x)}$. A way to swap what is on each side of the “given” bar.`, ["Bayes"]],
+  ["distribution", R`The full list of possible outcomes together with how likely each one is.`, ["distributions", "probability distribution"]],
+  ["sampling", R`Picking one outcome at random, following the probabilities of a distribution. Written $x \sim p$.`, ["sample", "samples", "sampled"]],
+  ["expected value", R`The long-run average you would get from many samples, written $\mathbb{E}[x]$.`, ["expectation"]],
+  ["logarithm", R`The power you must raise a base to in order to get a number: $\log_2 8 = 3$. Logs turn products into sums.`, ["log", "logs", "natural log"]],
+  ["vector", R`An ordered list of numbers, like $[3, 4]$. It can be drawn as an arrow.`, ["vectors"]],
+  ["dimension", R`How many numbers a vector holds. A $28 \times 28$ image flattened into a list has dimension 784.`, ["dimensions", "dimensional"]],
+  ["dot product", R`Multiply two vectors entry by entry and add up: $[1,2]\cdot[3,4] = 3 + 8 = 11$. Large when the vectors point the same way.`],
+  ["cosine similarity", R`Dot product divided by both lengths; a number from $-1$ to $1$ that measures whether two vectors point the same way.`],
+  ["matrix", R`A rectangular table of numbers. Multiplying it by a vector does one dot product per row.`, ["matrices"]],
+  ["derivative", R`The slope of a curve at one point: how fast the output changes when the input changes a tiny bit.`, ["slope", "slopes"]],
+  ["gradient", R`The list of slopes of the loss, one for every weight. It points uphill, so training steps the opposite way.`, ["gradients"]],
+  ["gradient descent", R`Training by repeatedly nudging every weight a little in the downhill direction: $w \leftarrow w - \eta \times \text{slope}$.`],
+  ["learning rate", R`The step size $\eta$ in gradient descent. Too small is slow; too big overshoots.`],
+  ["chain rule", R`To find how a change travels through several steps, multiply the slopes of each step.`],
+  ["backpropagation", R`Using the chain rule to compute the slope for every weight, starting from the loss and moving backwards through the layers.`, ["backprop"]],
+  ["variance", R`The average squared distance from the mean, written $\sigma^2$. It measures spread.`],
+  ["standard deviation", R`The square root of the variance, written $\sigma$. Typical distance of a value from the mean.`],
+  ["Gaussian", R`The bell-shaped distribution $\mathcal{N}(\mu, \sigma^2)$, fixed by its mean and variance. Also called the normal distribution.`, ["normal distribution", "bell curve"]],
+  ["standard normal", R`The Gaussian with mean 0 and variance 1, written $\mathcal{N}(0, 1)$.`],
+  ["KL divergence", R`A number that measures how different two distributions are. It is 0 when they match and never negative.`, ["Kullback–Leibler divergence", "KL"]],
+  ["parameter", R`A number inside a model that training adjusts, such as a weight or a bias.`, ["parameters", "learnable parameters"]],
+  ["weight", R`A number that says how strongly one input affects a neuron. Training tunes the weights.`, ["weights"]],
+  ["bias", R`Two meanings. In a neuron: a number added after the weighted sum so the output can shift up or down. In ethics (Week 12): an unfair skew in data or answers, such as favouring one group.`, ["biases"]],
+  ["neuron", R`The basic unit of a neural network: it computes $z = \mathbf{w}\cdot\mathbf{x} + b$ and then applies an activation function.`, ["neurons"]]
+);
